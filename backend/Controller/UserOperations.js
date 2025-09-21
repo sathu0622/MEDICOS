@@ -2,9 +2,8 @@ import express from "express";
 import UserModel from "../Models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-
+import passport from "passport";
 const router = express.Router();
-const JWT_SECRET = 'jiggujigurailkilambuthupaar'; 
 
 // CORS Middleware
 router.use((req, res, next) => {
@@ -200,5 +199,20 @@ router.put("/update/:id", authenticateUser, async (req, res) => {
         });
     }
 });
+
+
+// Start Google OAuth flow
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+
+// Callback URL after Google Auth
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "http://localhost:5173/login" }),
+  (req, res) => {
+    const token = jwt.sign({ userId: req.user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    res.redirect(`http://localhost:5173/dashboard?token=${token}`);
+  }
+);
+
 
 export default router;

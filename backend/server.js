@@ -9,13 +9,26 @@ import InventoryOperations from './Controller/InventoryOperations.js'
 import PaymentOperations from './Controller/PaymentOperations.js'
 import OrderOperations from './Controller/OrderOperations.js'
 import FAQOperations from './Controller/FAQOperations.js'
+import passport from "./config/passport.js";
+import session from "express-session";
 
 dotenv.config();
 const app = express();
+app.use(express.json());
 
 app.use('/uploads', express.static('public/uploads'));
 
+app.use(
+  session({
+    secret: "mysecret",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 
 app.use(cors({
@@ -26,8 +39,6 @@ app.use(cors({
 }));
 
 app.options('*', cors());
-app.use(express.json()); 
-
 
 app.use("/UserOperations", UserOperations);
 app.use("/AppointmentOperations", AppointmentOperations);

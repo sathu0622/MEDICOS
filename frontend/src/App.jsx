@@ -19,7 +19,7 @@ import UpdateReview from './FAQ/UpdateReview';
 import FAQs from './FAQ/FAQs';
 import Ask from './FAQ/Ask';
 import UpdateFAQ from './FAQ/UpdateFAQ';
-
+import Dashboard from './Users/Dashboard';
 
 import Welcomepage from './pages/Welcomepage';
 import Userhome from './pages/Userhome';
@@ -52,6 +52,7 @@ function App() {
     <BrowserRouter>
     
           <Routes>
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/Schedule" element={<Schedule />} />
             <Route path="/Slots" element={<Slots />} />
             <Route path="/AppointmentBooking/:id" element={<AppointmentBooking />} />

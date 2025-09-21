@@ -19,9 +19,7 @@ const Login = () => {
       const response = await axios.post(
         'http://localhost:4000/UserOperations/login',
         { email, password },
-        {
-          headers: { 'Content-Type': 'application/json' }
-        }
+        { headers: { 'Content-Type': 'application/json' } }
       );
 
       if (response.data && response.data.token) {
@@ -29,8 +27,8 @@ const Login = () => {
         if (response.data.user) {
           localStorage.setItem('userData', JSON.stringify(response.data.user));
         }
-        if (response.data.user.type === 'admin') {
-          navigate('/AdminDashboard'); // Change this to your admin route
+        if (response.data.user.type =Dashboard.jsx== 'admin') {
+          navigate('/AdminDashboard');
         } else {
           navigate('/Userhome');
         }
@@ -42,6 +40,12 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Google login handler
+  const handleGoogleLogin = () => {
+    // Redirect user to your backend Google OAuth endpoint
+    window.location.href = "http://localhost:4000/UserOperations/google";
   };
 
   return (
@@ -90,6 +94,27 @@ const Login = () => {
             className="w-full bg-[#007BFF] text-white py-3 rounded-lg hover:bg-[#0056b3] transition"
           >
             {isLoading ? 'Logging in...' : 'Login'}
+          </button>
+
+          {/* Divider */}
+          <div className="flex items-center justify-center my-4">
+            <div className="w-1/3 border-t border-gray-300"></div>
+            <span className="mx-2 text-gray-500 text-sm">OR</span>
+            <div className="w-1/3 border-t border-gray-300"></div>
+          </div>
+
+          {/* Google Login Button */}
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="w-full flex items-center justify-center bg-white border border-gray-300 py-3 rounded-lg hover:bg-gray-100 transition"
+          >
+            <img
+              src="https://developers.google.com/identity/images/g-logo.png"
+              alt="Google"
+              className="w-5 h-5 mr-2"
+            />
+            <span className="text-gray-700 font-medium">Continue with Google</span>
           </button>
 
           <div className="text-center mt-4">
