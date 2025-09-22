@@ -88,8 +88,9 @@ const Available = () => {
     };
 
     const handleBooking = (slotId) => {
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        if (!userData._id) {
+        const token = localStorage.getItem('authToken');
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        if (!token || !userData) {
             toast.error("Please login to book an appointment");
             navigate('/login');
             return;

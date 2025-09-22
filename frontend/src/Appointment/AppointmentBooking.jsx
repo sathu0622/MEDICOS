@@ -144,7 +144,6 @@ const AppointmentBooking = () => {
     try {
       const token = localStorage.getItem('authToken');
       const userData = JSON.parse(localStorage.getItem('userData'));
-  
       if (!userData?._id) {
         throw new Error('User not authenticated');
       }

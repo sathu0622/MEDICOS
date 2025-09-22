@@ -27,7 +27,8 @@ const Login = () => {
         // Store user info
         const user = response.data.user;
         if (user) {
-          localStorage.setItem("userData", JSON.stringify(user));
+          const userToStore = { ...user, _id: user.id || user._id };
+          localStorage.setItem("userData", JSON.stringify(userToStore));
           localStorage.setItem("userType", user.type);
           if (user.type === "admin") {
             navigate("/AdminDashboard");
