@@ -21,6 +21,7 @@ const Login = () => {
 
       if (response.data?.accessToken) {
         // Store token in session storage
+        localStorage.setItem("authToken", response.data.accessToken);
         sessionStorage.setItem("accessToken", response.data.accessToken);
 
         // Store user info
