@@ -5,7 +5,7 @@ const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true },
     mobile: { type: String, required: true },
     gender: { type: String, enum: ["male", "female", "other"], required: true },
-    type: { type: String, enum: ["doctor", "admin"], default: "user" }, // role
+    type: { type: String, enum: ["doctor", "admin", "user"], default: "user" }, // role
     password: { type: String, required: true },
     refreshToken: { type: String } // store refresh token for security
 }, { timestamps: true });

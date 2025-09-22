@@ -10,7 +10,8 @@ const Registration = () => {
         mobile: '',
         type: '',
         gender: '',
-        password: ''
+        password: '',
+        cpassword: ''
     });
     const [error, setError] = useState('');
 
@@ -30,8 +31,8 @@ const Registration = () => {
   setError('');
 
   try {
-    const { cpassword, ...payload } = formData; // strip cpassword
-    const response = await axios.post(
+      const { cpassword, ...payload } = formData;
+      await axios.post(
       "http://localhost:4000/UserOperations/register",
       payload,
       { headers: { "Content-Type": "application/json" } }
@@ -43,7 +44,7 @@ const Registration = () => {
     if (error.response?.data?.errors) {
       setError(error.response.data.errors.map(err => err.msg).join(", "));
     } else {
-      setError(error.response?.data?.message || "Error registering user!");
+        setError(error.response?.data?.error || error.response?.data?.message || "Error registering user!");
     }
   }
 };
@@ -114,8 +115,8 @@ const Registration = () => {
                             >
                                 <option value="">Select your role</option>
                                 <option value="doctor">Doctor</option>
-                                <option value="representative">Representative</option>
-                                <option value="company">Company</option>
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
                             </select>
                         </div>
                         <div>
