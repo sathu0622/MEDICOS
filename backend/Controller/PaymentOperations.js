@@ -6,11 +6,11 @@ const router = express.Router();
 
 
 
-router.post("/Pay", async (req, res) => {
-    const { userId, Repname, email, Contactno, BookRef, payRef, cnum, type, cmonth, cyear, cvv } = req.body;
+router.post("/pay", async (req, res) => {
+    const { userId, Repname, email, Contactno, BookRef, payRef, cnum, type, cmonth, cyear } = req.body;
 
 
-    if (!userId || !Repname || !email || !Contactno || !BookRef || !payRef || !cnum || !type || !cmonth || !cyear || !cvv) {
+    if (!userId || !Repname || !email || !Contactno || !BookRef || !payRef || !cnum || !type || !cmonth || !cyear) {
         return res.status(400).json({ 
             success: false,
             message: "Missing required fields" 
@@ -18,6 +18,7 @@ router.post("/Pay", async (req, res) => {
     }
 
     try {
+        // Only store last 4 digits of card number
         const payment = new PaymentModel({
             userId,
             Repname,
@@ -25,13 +26,12 @@ router.post("/Pay", async (req, res) => {
             Contactno,
             BookRef,
             payRef,
-            cnum, 
+            cnum, // This is already last 4 digits from frontend
             type,
             cmonth,
             cyear,
-            cvv, 
+            // Do NOT store CVV
         });
-
         await payment.save();
 
 
