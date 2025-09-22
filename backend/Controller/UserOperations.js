@@ -110,6 +110,19 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.get("/getUser", authenticateUser, async (req, res) => {
+  try {
+    const userId = req.userId; // set by authenticateUser middleware
+    const user = await UserModel.findById(userId).select("-password -refreshToken");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    res.json({ success: true, data: user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error fetching user", error: err.message });
+  }
+});
+
 
 
 // REFRESH TOKEN

@@ -21,12 +21,14 @@ const Login = () => {
 
       if (response.data?.accessToken) {
         // Store token in session storage
+        localStorage.setItem("authToken", response.data.accessToken);
         sessionStorage.setItem("accessToken", response.data.accessToken);
 
         // Store user info
         const user = response.data.user;
         if (user) {
-          localStorage.setItem("userData", JSON.stringify(user));
+          const userToStore = { ...user, _id: user.id || user._id };
+          localStorage.setItem("userData", JSON.stringify(userToStore));
           localStorage.setItem("userType", user.type);
           if (user.type === "admin") {
             navigate("/AdminDashboard");
