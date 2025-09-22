@@ -20,9 +20,9 @@ passport.use(
             name: profile.displayName,
             email: profile.emails[0].value,
             type: "user",
-            gender: "N/A",
-            password: null, // not needed for Google users
-            mobile: null,
+            gender: "other", // use a valid enum value
+            password: "google-oauth", // set a dummy password
+            mobile: "0000000000", // set a dummy mobile number
           });
         }
 

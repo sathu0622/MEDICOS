@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaCreditCard, FaUser, FaEnvelope, FaPhone, FaFileAlt, FaLock } from "react-icons/fa";
@@ -21,12 +21,40 @@ const Payment = () => {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Get user data from localStorage
+    const userData = JSON.parse(localStorage.getItem("userData"));
+    if (userData) {
+      setPayment((prev) => ({
+        ...prev,
+        Repname: userData.name || "",
+        email: userData.email || "",
+        Contactno: userData.mobile || ""
+      }));
+    }
+  }, []);
+
+  // Helper to format card number with spaces
+  function formatCardNumber(value) {
+    return value.replace(/\D/g, "") // Remove non-digits
+      .replace(/(.{4})/g, "$1 ")    // Add space every 4 digits
+      .trim();
+  }
+
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setPayment({ ...payment, [name]: value });
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" });
+    if (name === "cnum") {
+      // Only allow digits, format with spaces
+      const digits = value.replace(/\D/g, "").slice(0, 16);
+      setPayment({ ...payment, cnum: digits });
+      if (errors[name]) {
+        setErrors({ ...errors, [name]: "" });
+      }
+    } else {
+      setPayment({ ...payment, [name]: value });
+      if (errors[name]) {
+        setErrors({ ...errors, [name]: "" });
+      }
     }
   };
 
@@ -354,7 +382,8 @@ const Payment = () => {
                     placeholder="Nikshan" 
                     value={payment.Repname}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 border placeholder-black rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
+                        readOnly
+                        className={`w-full pl-10 pr-4 py-3 border text-black placeholder-black rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
                       errors.Repname ? "border-red-500" : "border-gray-300"
                     }`}
                   />
@@ -372,7 +401,8 @@ const Payment = () => {
                     placeholder="Nikshan@example.com" 
                     value={payment.email}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 border bg-white placeholder-black  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
+                        readOnly
+                        className={`w-full pl-10 pr-4 py-3 text-black border bg-white placeholder-black  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
                       errors.email ? "border-red-500" : "border-gray-300"
                     }`}
                   />
@@ -390,7 +420,8 @@ const Payment = () => {
                     placeholder="9876543210" 
                     value={payment.Contactno}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 border bg-white placeholder-black rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
+                        readOnly
+                        className={`w-full pl-10 pr-4 py-3 border text-black bg-white placeholder-black rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
                       errors.Contactno ? "border-red-500" : "border-gray-300"
                     }`}
                   />
@@ -450,15 +481,14 @@ const Payment = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
                 <div className="relative">
                   <input
-                    type="text"
-                    maxLength="16"
-                    name="cnum"
-                    placeholder="1234 5678 9012 3456"
-                    value={payment.cnum}
-                    onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 border bg-white placeholder-black rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
-                      errors.cnum ? "border-red-500" : "border-gray-300"
-                    }`}
+                        type="text"
+                        maxLength="19"
+                        name="cnum"
+                        placeholder="0000 0000 0000 0000"
+                        value={formatCardNumber(payment.cnum)}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-4 py-3 border text-black bg-white placeholder-gray rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${errors.cnum ? "border-red-500" : "border-gray-300"
+                          }`}
                   />
                   <FaCreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 </div>
