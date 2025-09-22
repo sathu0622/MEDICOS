@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 const FAQs = () => {
@@ -12,20 +12,16 @@ const FAQs = () => {
     const fetchFAQs = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        const userData = JSON.parse(localStorage.getItem('userData'));
+        const userData = useMemo(() => {
+          const data = localStorage.getItem('userData');
+          return data ? JSON.parse(data) : null;
+        }, []);
         
         if (!userData?._id) {
           throw new Error('User not authenticated');
         }
 
-        const response = await axios.get(
-          `http://localhost:4000/FAQOperations/getfaq/user/${userData._id}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          }
-        );
+        const response = await api.get(`/FAQOperations/getfaq/user/${userData._id}`);
         
         setFaqs(response.data.faqs || []);
       } catch (err) {
@@ -43,14 +39,8 @@ const FAQs = () => {
     if (window.confirm("Are you sure you want to delete this question?")) {
       try {
         const token = localStorage.getItem('authToken');
-        await axios.delete(
-          `http://localhost:4000/FAQOperations/deletefaq/${id}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          }
-        );
+        await api.delete(`/FAQOperations/deletefaq/${id}`);
+
         setFaqs(faqs.filter(faq => faq._id !== id));
       } catch (err) {
         console.error("Error deleting FAQ:", err);

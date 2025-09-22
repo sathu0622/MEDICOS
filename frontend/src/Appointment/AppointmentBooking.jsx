@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Header from "../pages/Header";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import api from "../services/api";
+
 
 const AppointmentBooking = () => {
   const { id } = useParams();
@@ -29,7 +30,7 @@ const AppointmentBooking = () => {
   useEffect(() => {
     const fetchSlot = async () => {
       try {
-        const allSlotsResponse = await axios.get('http://localhost:4000/ScheduleOperations/getslot');
+        const allSlotsResponse = await api.get('/ScheduleOperations/getslot');
         const foundSlot = allSlotsResponse.data.find(s => s._id === id);
 
         if (foundSlot) {
@@ -161,14 +162,14 @@ const AppointmentBooking = () => {
         atime: appointment.atime, 
       };
   
-      const response = await axios.post(
-        'http://localhost:4000/AppointmentOperations/Appointment',
+     const response = await api.post(
+        "/AppointmentOperations/Appointment",
         bookingData,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
       );
   

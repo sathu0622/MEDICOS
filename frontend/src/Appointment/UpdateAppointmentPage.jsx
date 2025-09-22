@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const UpdateAppointmentPage = () => {
@@ -17,11 +17,11 @@ const UpdateAppointmentPage = () => {
     });
 
     useEffect(() => {
-        axios.get(`http://localhost:4000/AppointmentOperations/get/${id}`)
-            .then(result => {
-                setAppointment(result.data);
-            })
-            .catch(err => console.log(err));
+        api.get(`/AppointmentOperations/get/${id}`)
+    .then(result => {
+        setAppointment(result.data);
+    })
+    .catch(err => console.log(err));
     }, [id]);
 
     const handleChange = (e) => {
@@ -33,12 +33,12 @@ const UpdateAppointmentPage = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        axios.put(`http://localhost:4000/AppointmentOperations/update/${id}`, appointment)
-            .then(() => {
-                alert('Appointment Updated!');
-                navigate('/AppointmentsPage');
-            })
-            .catch(err => console.log(err));
+        api.put(`/AppointmentOperations/update/${id}`, appointment)
+    .then(() => {
+        alert('Appointment Updated!');
+        navigate('/AppointmentsPage');
+    })
+    .catch(err => console.log(err));
     };
 
     return (

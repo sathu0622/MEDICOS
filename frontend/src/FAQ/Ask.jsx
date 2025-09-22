@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from '../services/api';
 import Header from '../pages/Header';
 
 const Ask = () => {
@@ -61,16 +61,10 @@ const Ask = () => {
         faq: faq.faq.trim()
       };
   
-      const response = await axios.post(
-        'http://localhost:4000/FAQOperations/ask',
-        faqData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await api.post('/FAQOperations/ask', faqData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
   
       if (response.data && response.data.success) {
         navigate('/Profile', {

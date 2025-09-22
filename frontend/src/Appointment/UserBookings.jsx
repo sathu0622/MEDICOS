@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { FaEdit, FaTrash, FaCheck, FaTimes, FaSearch, FaFilter } from 'react-icons/fa';
 
@@ -25,7 +25,7 @@ const UserBookings = () => {
 
   const fetchBookings = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/AppointmentOperations/getappointment');
+      const response = await api.get('/AppointmentOperations/getappointment');
       setBookings(response.data);
     } catch (err) {
       setError(err.message || 'Failed to fetch bookings');
@@ -62,7 +62,7 @@ const UserBookings = () => {
     }
 
     try {
-      await axios.delete(`http://localhost:4000/AppointmentOperations/deleteappointment/${id}`);
+      await api.delete(`/AppointmentOperations/deleteappointment/${id}`);
       setBookings(bookings.filter(booking => booking._id !== id));
     } catch (err) {
       setError(err.message || 'Failed to delete booking');
@@ -79,7 +79,7 @@ const UserBookings = () => {
       const booking = bookings.find(b => b._id === id);
       const updatedBooking = { ...booking, outcome: editOutcome };
       
-      await axios.put(`http://localhost:4000/AppointmentOperations/update/${id}`, updatedBooking);
+      await api.put(`/AppointmentOperations/update/${id}`, updatedBooking);
       
       setBookings(bookings.map(booking => 
         booking._id === id ? { ...booking, outcome: editOutcome } : booking
