@@ -3,7 +3,7 @@ import cors from 'cors';
 import OrderModel from "../Models/Order.js";
 
 const router = express.Router();
-router.use(cors());
+//router.use(cors());
 
 
 

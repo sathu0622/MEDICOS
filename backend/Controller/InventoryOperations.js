@@ -6,7 +6,7 @@ import path from 'path';
 
 
 const router = express.Router();
-router.use(cors());
+//router.use(cors());
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {

@@ -2,7 +2,7 @@ import express from "express";
 import cors from 'cors';
 import PaymentModel from "../Models/Payment.js";
 const router = express.Router();
-router.use(cors());
+//router.use(cors());
 
 
 

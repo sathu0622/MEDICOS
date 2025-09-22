@@ -6,7 +6,7 @@ import cors from 'cors';
 const router = express.Router();
 
 
-router.use(cors());
+//router.use(cors());
 
 
 router.post("/Appointment", async (req, res) => {
