@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import api from "../services/api";
 import Header from '../pages/Header';
 
 const UpdateFAQ = () => {
@@ -19,14 +19,7 @@ const UpdateFAQ = () => {
     const fetchFAQ = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
-          `http://localhost:4000/FAQOperations/getfaq/${id}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            }
-          }
-        );
+        const response = await api.get(`/FAQOperations/getfaq/${id}`);
         setFormData({
           username: response.data.username || "",
           email: response.data.email || "",
@@ -73,20 +66,11 @@ const UpdateFAQ = () => {
     
     setLoading(true);
     try {
-      await axios.put(
-        `http://localhost:4000/FAQOperations/updatefaq/${id}`,
-        {
-          username: formData.username,
-          email: formData.email,
-          faq: formData.question
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      await api.put(`/FAQOperations/updatefaq/${id}`, {
+        username: formData.username,
+        email: formData.email,
+        faq: formData.question
+      });
       alert("FAQ updated successfully!");
       navigate('/Profile');
     } catch (err) {

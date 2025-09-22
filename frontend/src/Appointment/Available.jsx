@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import Header from '../pages/Header';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -18,7 +18,7 @@ const Available = () => {
     useEffect(() => {
         const fetchSlots = async () => {
             try {
-                const response = await axios.get('http://localhost:4000/ScheduleOperations/getslot');
+                const response = await api.get('/ScheduleOperations/getslot');
                
                 const availableSlots = response.data.filter(slot => !slot.isBooked);
                 setSlots(availableSlots);

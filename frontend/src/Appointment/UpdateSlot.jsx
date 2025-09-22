@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 
 const UpdateSlot = () => {
     const { id } = useParams();
@@ -17,7 +17,7 @@ const UpdateSlot = () => {
     useEffect(() => {
         if (!id) return;
 
-        axios.get(`http://localhost:4000/ScheduleOperations/getslot/${id}`)
+        api.get(`/ScheduleOperations/getslot/${id}`)
             .then(response => {
                 const data = response.data;
                 
@@ -101,7 +101,7 @@ const UpdateSlot = () => {
         event.preventDefault();
         if (!validateForm()) return;
 
-        axios.put(`http://localhost:4000/ScheduleOperations/updateslot/${id}`, slotData)
+        api.put(`/ScheduleOperations/updateslot/${id}`, slotData)
             .then(() => {
                 alert("Slot Updated Successfully!");
                 navigate('/slots');

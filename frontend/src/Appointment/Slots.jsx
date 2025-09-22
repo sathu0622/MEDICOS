@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import DoctorProfile from '../assets/DoctorProfile.png';
 import { FaPen, FaTrashAlt } from 'react-icons/fa';
 import Header from '../pages/Header';
@@ -25,10 +25,8 @@ const Slots = () => {
                     throw new Error('User not authenticated');
                 }
 
-                const response = await axios.get(
-                    `http://localhost:4000/ScheduleOperations/getslot/user/${userData.email}`,
-                    { headers: { 'Authorization': `Bearer ${token}` } }
-                    
+                const response = await api.get(
+                    `/ScheduleOperations/getslot/user/${userData.email}`
                 );
 
                 if (Array.isArray(response.data.slots)) {
@@ -60,9 +58,8 @@ const Slots = () => {
                     onClick: async () => {
                         try {
                             const token = localStorage.getItem('authToken');
-                            await axios.delete(
-                                `http://localhost:4000/ScheduleOperations/deleteslot/${id}`,
-                                { headers: { 'Authorization': `Bearer ${token}` } }
+                            await api.delete(
+                                `/ScheduleOperations/deleteslot/${id}`
                             );
                             setSlots(prevSlots => prevSlots.filter(slot => slot._id !== id));
                             toast.success("Slot deleted successfully!");

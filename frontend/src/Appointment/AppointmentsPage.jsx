@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { MdDelete, MdPictureAsPdf, MdEdit, MdPayment, MdFilterList } from 'react-icons/md';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../pages/Header';
@@ -31,10 +31,9 @@ const AppointmentsPage = () => {
                 const userId = userData.userId || userData._id;
                 if (!userId) throw new Error('User ID not found');
 
-                const response = await axios.get(
-                    `http://localhost:4000/AppointmentOperations/getappointment/user/${userId}`,
-                    { headers: { 'Authorization': `Bearer ${token}` } }
-                );
+                const response = await api.get(
+                    `/AppointmentOperations/getappointment/user/${userId}`
+                )
 
                 setAppointments(response.data.appointments || []);
             } catch (err) {
@@ -82,9 +81,8 @@ const AppointmentsPage = () => {
         
         try {
             const token = localStorage.getItem('authToken');
-            await axios.delete(
-                `http://localhost:4000/AppointmentOperations/deleteappointment/${id}`,
-                { headers: { 'Authorization': `Bearer ${token}` } }
+            await api.delete(
+                `/AppointmentOperations/deleteappointment/${id}`
             );
             setAppointments(appointments.filter(appt => appt._id !== id));
         } catch (err) {

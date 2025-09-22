@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { MdPictureAsPdf } from 'react-icons/md';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../pages/Header';
@@ -27,17 +27,15 @@ const DoctorBookings = () => {
                 }
 
                 // Get all slots for this doctor
-                const slotsResponse = await axios.get(
-                    `http://localhost:4000/ScheduleOperations/getslot/user/${userData.email}`,
-                    { headers: { 'Authorization': `Bearer ${token}` } }
+                const slotsResponse = await api.get(
+                    `/ScheduleOperations/getslot/user/${userData.email}`
                 );
 
                 const slotIds = slotsResponse.data.slots.map(slot => slot._id);
 
                 // Get all bookings for these slots
-                const bookingsResponse = await axios.get(
-                    'http://localhost:4000/AppointmentOperations/getappointment',
-                    { headers: { 'Authorization': `Bearer ${token}` } }
+                const bookingsResponse = await api.get(
+                    '/AppointmentOperations/getappointment'
                 );
 
                 // Filter bookings to only include those for this doctor's slots

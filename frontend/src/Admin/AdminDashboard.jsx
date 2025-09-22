@@ -6,7 +6,7 @@ import PayTable from "../Financial/PayTable";
 import UserBookings from "../Appointment/UserBookings";
 import Profile from "../Users/Profile";
 import { useNavigate } from "react-router-dom";
-import axios from 'axios';
+import api from '../services/api';
 import { FaUserCircle, FaEdit, FaTimes, FaCheck, FaSpinner, FaShoppingBag, FaCreditCard, FaCalendarAlt, FaCalendarCheck, FaQuestionCircle, FaSignOutAlt, FaBars, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const AdminDashboard = () => {
@@ -56,16 +56,9 @@ const AdminDashboard = () => {
     }
 
     try {
-      const api = axios.create({
-        baseURL: 'http://localhost:4000/UserOperations',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        withCredentials: true
+      const response = await api.get('/UserOperations/getUser', {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      const response = await api.get('/getUser');
       
       if (response.data?.success) {
         const userData = response.data.data;
@@ -105,19 +98,12 @@ const AdminDashboard = () => {
 
     try {
       const token = localStorage.getItem('authToken');
-      const api = axios.create({
-        baseURL: 'http://localhost:4000/UserOperations',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        withCredentials: true
-      });
-
-      const response = await api.put(`/update/${profile._id}`, {
-        name: profile.name,
-        mobile: profile.mobile,
-        gender: profile.gender
+      const response = await api.put(`/UserOperations/update/${profile._id}`, {
+          name: profile.name,
+          mobile: profile.mobile,
+          gender: profile.gender
+      }, {
+          headers: { Authorization: `Bearer ${token}` }
       });
 
       if (response.data.success) {
