@@ -34,7 +34,7 @@ const authenticateUser = (req, res, next) => {
     const token = authHeader.split(' ')[1];
     
     try {
-      const decoded = jwt.verify(token, JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.userId = decoded.userId;
       next();
     } catch (err) {
@@ -111,7 +111,7 @@ router.post("/login", async (req, res) => {
         }
 
         // Generate JWT token - using the same JWT_SECRET constant
-        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.json({ token, user });
     } catch (err) {
         console.error('Login error:', err);

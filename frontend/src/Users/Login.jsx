@@ -23,18 +23,21 @@ const Login = () => {
       );
 
       if (response.data && response.data.token) {
-        localStorage.setItem('authToken', response.data.token);
-        if (response.data.user) {
-          localStorage.setItem('userData', JSON.stringify(response.data.user));
-        }
-        if (response.data.user.type =Dashboard.jsx== 'admin') {
-          navigate('/AdminDashboard');
-        } else {
-          navigate('/Userhome');
-        }
-      } else {
-        throw new Error('Invalid response from server');
-      }
+  localStorage.setItem('authToken', response.data.token);
+  if (response.data.user) {
+    localStorage.setItem('userData', JSON.stringify(response.data.user));
+  }
+
+  // ✅ Correct condition
+  if (response.data.user.type === 'admin') {
+    navigate('/AdminDashboard');
+  } else {
+    navigate('/Userhome');
+  }
+} else {
+  throw new Error('Invalid response from server');
+}
+
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid login credentials');
     } finally {
