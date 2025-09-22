@@ -1,6 +1,7 @@
+// src/components/Login.js (updated)
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api'; // Import our API service
 import Head from "../pages/WelcomeHeader";
 
 const Login = () => {
@@ -16,28 +17,28 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await axios.post(
-        'http://localhost:4000/UserOperations/login',
-        { email, password },
-        { headers: { 'Content-Type': 'application/json' } }
-      );
+      const response = await api.post("/UserOperations/login", { email, password });
 
-      if (response.data && response.data.token) {
-  localStorage.setItem('authToken', response.data.token);
-  if (response.data.user) {
-    localStorage.setItem('userData', JSON.stringify(response.data.user));
-  }
+      if (response.data?.accessToken) {
+        // Store token in session storage
+        sessionStorage.setItem("accessToken", response.data.accessToken);
 
-  // ✅ Correct condition
-  if (response.data.user.type === 'admin') {
-    navigate('/AdminDashboard');
-  } else {
-    navigate('/Userhome');
-  }
-} else {
-  throw new Error('Invalid response from server');
-}
-
+        // Store user info
+        const user = response.data.user;
+        if (user) {
+          localStorage.setItem("userData", JSON.stringify(user));
+          localStorage.setItem("userType", user.type);
+          if (user.type === "admin") {
+            navigate("/AdminDashboard");
+          } else {
+            navigate("/Userhome");
+          }
+        } else {
+          setError("User data missing from server response");
+        }
+      } else {
+        setError("Invalid response from server");
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid login credentials');
     } finally {
@@ -47,7 +48,6 @@ const Login = () => {
 
   // Google login handler
   const handleGoogleLogin = () => {
-    // Redirect user to your backend Google OAuth endpoint
     window.location.href = "http://localhost:4000/UserOperations/google";
   };
 

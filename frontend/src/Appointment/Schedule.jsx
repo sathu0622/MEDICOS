@@ -1,9 +1,7 @@
-
-
-
+// src/components/Schedule.js (updated)
 import React, { useState, useEffect } from 'react';
 import Doctorprofile from '../assets/DoctorProfile.png';
-import axios from 'axios';
+import api from '../services/api'; // Import our API service
 import { useNavigate } from 'react-router-dom';
 import Header from '../pages/Header';
 
@@ -16,7 +14,7 @@ const Schedule = () => {
         dContact: ''
     });
 
-    const [slots, setSlots] = useState([]); // To store fetched slots
+    const [slots, setSlots] = useState([]);
     const [errors, setErrors] = useState({});
     const [submitLoading, setSubmitLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -31,6 +29,18 @@ const Schedule = () => {
                 doctor: userData.name
             }));
         }
+        
+        // Fetch slots using our API service
+        const fetchSlots = async () => {
+            try {
+                const response = await api.get('/ScheduleOperations/getslot');
+                setSlots(response.data);
+            } catch (err) {
+                console.error('Error fetching slots:', err);
+            }
+        };
+        
+        fetchSlots();
     }, []);
 
     const handleChange = (e) => {
@@ -95,24 +105,18 @@ const Schedule = () => {
         setError(null);
 
         try {
-            const token = localStorage.getItem('authToken');
             const userData = JSON.parse(localStorage.getItem('userData'));
-            
-            if (!userData?._id) {
+            console.log('User Data:', userData);
+            console.log('Data:', userData?.id);
+            if (!userData?.id) {
                 throw new Error('User not authenticated');
             }
 
-            const response = await axios.post(
-                'http://localhost:4000/ScheduleOperations/Schedule', 
+            const response = await api.post(
+                '/ScheduleOperations/Schedule', 
                 {
-                    userId: userData._id,
+                    userId: userData.id,
                     ...formData
-                },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
                 }
             );
 
@@ -135,16 +139,8 @@ const Schedule = () => {
         }
     };
 
-    useEffect(() => {
-        axios.get('http://localhost:4000/ScheduleOperations/getslot')
-            .then(result => setSlots(result.data))
-            .catch(err => console.log(err));
-    }, []);
-
     return (
         <div className="min-h-screen bg-white"> 
-
-
            <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md py-2">
                 <Header />
             </div>

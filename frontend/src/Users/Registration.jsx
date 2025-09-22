@@ -10,8 +10,7 @@ const Registration = () => {
         mobile: '',
         type: '',
         gender: '',
-        password: '',
-        cpassword: '',
+        password: ''
     });
     const [error, setError] = useState('');
 
@@ -22,22 +21,34 @@ const Registration = () => {
     };
 
     const handleSubmit = async (event) => {
-        event.preventDefault();
+  event.preventDefault();
 
-        if (formData.password !== formData.cpassword) {
-            setError("Passwords do not match!");
-            return;
-        }
-        setError('');
+  if (formData.password !== formData.cpassword) {
+    setError("Passwords do not match!");
+    return;
+  }
+  setError('');
 
-        try {
-            const response = await axios.post('http://localhost:4000/UserOperations/register', formData);
-            alert("Your Profile Created!");
-            navigate('/Login');
-        } catch (error) {
-            setError(error.response?.data?.message || "Error registering user!");
-        }
-    };
+  try {
+    const { cpassword, ...payload } = formData; // strip cpassword
+    const response = await axios.post(
+      "http://localhost:4000/UserOperations/register",
+      payload,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    alert("Your Profile Created!");
+    navigate("/Login");
+  } catch (error) {
+    console.error("Registration error:", error.response?.data);
+    if (error.response?.data?.errors) {
+      setError(error.response.data.errors.map(err => err.msg).join(", "));
+    } else {
+      setError(error.response?.data?.message || "Error registering user!");
+    }
+  }
+};
+
+
 
     return (
         <div className="min-h-screen bg-white flex flex-col items-center">

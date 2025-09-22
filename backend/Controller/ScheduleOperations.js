@@ -6,8 +6,6 @@ import BookModel from "../Models/Booking.js";
 
 const router = express.Router();
 
-router.use(cors());
-
 router.post("/Schedule", async (req, res) => {
     const { userId, doctor, slotDate, start, end, dContact } = req.body;
 
