@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Header from '../pages/Header';
 import { jsPDF } from "jspdf";
 import logo from '../logo.jpg';
+import { AuthContext } from '../context/AuthContext';
 
 const DoctorBookings = () => {
     const [bookings, setBookings] = useState([]);
@@ -15,14 +16,13 @@ const DoctorBookings = () => {
         status: ''
     });
     const navigate = useNavigate();
+    const { user } = useContext(AuthContext);
 
     useEffect(() => {
         const fetchBookings = async () => {
             try {
-                const token = localStorage.getItem('authToken');
-                const userData = JSON.parse(localStorage.getItem('userData'));
-                
-                if (!token || !userData) {
+               
+                if (!user?.email) {
                     throw new Error('Please login to view bookings');
                 }
 
@@ -52,7 +52,7 @@ const DoctorBookings = () => {
         };
 
         fetchBookings();
-    }, []);
+    }, [user]);
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
@@ -146,7 +146,7 @@ const DoctorBookings = () => {
         doc.save(`booking_${booking._id.slice(-8)}.pdf`);
     };
 
-    if (!localStorage.getItem('authToken')) {
+    if (!user) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
                 <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-sm text-center">

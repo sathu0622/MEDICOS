@@ -8,25 +8,24 @@ import { confirmAlert } from 'react-confirm-alert';
 import 'react-confirm-alert/src/react-confirm-alert.css';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { AuthContext } from '../context/AuthContext'; 
 
 const Slots = () => {
     const [slots, setSlots] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const { user } = useContext(AuthContext);
 
     useEffect(() => {
         const fetchSlots = async () => {
             try {
-                const token = localStorage.getItem('authToken');
-                const userData = JSON.parse(localStorage.getItem('userData'));
-
-                if (!userData?.email) {
+                if (!user?.email) {
                     throw new Error('User not authenticated');
                 }
 
                 const response = await api.get(
-                    `/ScheduleOperations/getslot/user/${userData.email}`
+                    `/ScheduleOperations/getslot/user/${user.email}`
                 );
 
                 if (Array.isArray(response.data.slots)) {
@@ -46,7 +45,7 @@ const Slots = () => {
         };
 
         fetchSlots();
-    }, []);
+    }, [user]);
 
     const handleDelete = (id) => {
         confirmAlert({
@@ -57,7 +56,7 @@ const Slots = () => {
                     label: 'Yes',
                     onClick: async () => {
                         try {
-                            const token = localStorage.getItem('authToken');
+                        
                             await api.delete(
                                 `/ScheduleOperations/deleteslot/${id}`
                             );
