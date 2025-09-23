@@ -1,5 +1,6 @@
 import InventoryModel from "../Models/Inventory.js";
 import { validationResult } from "express-validator";
+import mongoose from "mongoose";
 import path from "path";
 
 // CREATE Stock
@@ -53,7 +54,18 @@ export const getAllStock = async (req, res) => {
 
 // READ single stock
 export const getStockById = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const id = req.params.id;
+
+  // Additional ObjectID validation
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid stock ID format" });
+  }
+
   try {
     const inventory = await InventoryModel.findById(id);
     if (!inventory) {
@@ -61,13 +73,26 @@ export const getStockById = async (req, res) => {
     }
     res.json(inventory);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching stock", error: err });
+    res.status(500).json({
+      message: "Error fetching stock",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined
+    });
   }
 };
 
 // DELETE stock
 export const deleteStock = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const id = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid stock ID format" });
+  }
+
   try {
     const deleteSlot = await InventoryModel.findByIdAndDelete(id);
     if (!deleteSlot) {
@@ -75,26 +100,42 @@ export const deleteStock = async (req, res) => {
     }
     res.json({ message: "Stock details deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Error deleting stock", error: err });
+    res.status(500).json({
+      message: "Error deleting stock",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined
+    });
   }
 };
 
 // UPDATE stock
 export const updateStock = async (req, res) => {
-  const id = req.params.id;
-  let Img = req.file ? `uploads/${req.file.filename}` : null;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
+  const id = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid stock ID format" });
+  }
+
+  let Img = req.file ? `uploads/${req.file.filename}` : null;
   const updateData = { ...req.body };
   if (Img) updateData.Img = Img;
 
   try {
     const updatedStock = await InventoryModel.findByIdAndUpdate(id, updateData, {
       new: true,
+      runValidators: true
     });
     if (!updatedStock)
       return res.status(404).json({ message: "Stock not found" });
     res.json(updatedStock);
   } catch (err) {
-    res.status(500).json({ message: "Error updating stock", error: err });
+    res.status(500).json({
+      message: "Error updating stock",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined
+    });
   }
 };

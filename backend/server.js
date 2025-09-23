@@ -22,8 +22,25 @@ app.use(express.json());
 app.use(helmet());
 app.use(cookieParser())
 
-// const limiter = rateLimit({ windowMs: 15*60*1000, max: 100 });
-// app.use(limiter);
+// Enhanced rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: {
+    error: "Too many requests from this IP, please try again later."
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to API routes only
+app.use('/UserOperations', limiter);
+app.use('/PaymentOperations', limiter);
+app.use('/OrderOperations', limiter);
+app.use('/InventoryOperations', limiter);
+app.use('/AppointmentOperations', limiter);
+app.use('/ScheduleOperations', limiter);
+app.use('/FAQOperations', limiter);
 
 app.use('/uploads', express.static('public/uploads'));
 
@@ -35,7 +52,7 @@ app.use(session({
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 1000*60*60
+    maxAge: 1000 * 60 * 60
   }
 }));
 
@@ -52,7 +69,7 @@ app.use(cors({
       callback(new Error("CORS not allowed"), false);
     }
   },
-  methods: ["GET","POST","PUT","DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
 

@@ -1,14 +1,20 @@
 import BookModel from "../Models/Booking.js";
 import Slot from "../Models/Schedule.js";
+import { validationResult } from "express-validator";
 
 // Create Appointment
 export const createAppointment = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            success: false,
+            message: "Validation failed",
+            errors: errors.array()
+        });
+    }
+
     console.log("Incoming appointment:", req.body);
     const { userId, slotId, repname, contact, reason, address, company, outcome, date, atime } = req.body;
-
-    if (!userId || !slotId || !repname || !contact || !reason || !address || !date || !atime) {
-        return res.status(400).json({ message: "Missing required fields" });
-    }
 
     try {
         const appointment = new BookModel({
@@ -37,7 +43,7 @@ export const createAppointment = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Error creating appointment",
-            error: err.message
+            error: process.env.NODE_ENV === "development" ? err.message : undefined,
         });
     }
 };

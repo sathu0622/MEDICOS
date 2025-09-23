@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 
 import {
   createStock,
@@ -35,11 +35,11 @@ const stockValidation = [
   body("lastUpadte").isISO8601().withMessage("Invalid date"),
 ];
 
-// Routes
+// Routes with parameter validation
 router.post("/Stock", upload.single("Img"), stockValidation, createStock);
 router.get("/getstock", getAllStock);
-router.get("/getstock/:id", getStockById);
-router.delete("/deletestock/:id", deleteStock);
-router.put("/updatestock/:id", upload.single("Img"), updateStock);
+router.get("/getstock/:id", param("id").isMongoId().withMessage("Invalid stock ID"), getStockById);
+router.delete("/deletestock/:id", param("id").isMongoId().withMessage("Invalid stock ID"), deleteStock);
+router.put("/updatestock/:id", upload.single("Img"), param("id").isMongoId().withMessage("Invalid stock ID"), updateStock);
 
 export default router;

@@ -1,21 +1,19 @@
 import PaymentModel from "../Models/Payment.js";
 import { validationResult } from "express-validator";
+import mongoose from "mongoose";
 
 // Create new payment
 export const createPayment = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors: errors.array()
+    });
   }
 
   const { userId, Repname, email, Contactno, BookRef, payRef, cnum, type, cmonth, cyear } = req.body;
-
-  if (!userId || !Repname || !email || !Contactno || !BookRef || !payRef || !cnum || !type || !cmonth || !cyear) {
-    return res.status(400).json({
-      success: false,
-      message: "Missing required fields",
-    });
-  }
 
   try {
     const payment = new PaymentModel({
@@ -29,6 +27,7 @@ export const createPayment = async (req, res) => {
       type,
       cmonth,
       cyear,
+      // Do NOT store CVV
     });
 
     await payment.save();
@@ -53,6 +52,11 @@ export const createPayment = async (req, res) => {
 
 // Get payments by user ID
 export const getPaymentsByUser = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     const payments = await PaymentModel.find({ userId: req.params.userId });
 
@@ -82,6 +86,11 @@ export const getAllPayments = async (req, res) => {
 
 // Get payment by ID
 export const getPaymentById = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const id = req.params.id;
   try {
     const payment = await PaymentModel.findById(id);
@@ -96,6 +105,11 @@ export const getPaymentById = async (req, res) => {
 
 // Delete payment
 export const deletePayment = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const id = req.params.id;
   try {
     const deletePay = await PaymentModel.findByIdAndDelete(id);
@@ -110,6 +124,11 @@ export const deletePayment = async (req, res) => {
 
 // Update payment
 export const updatePayment = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const id = req.params.id;
   const { Repname, email, Contactno, BookRef, payRef, cnum, type, cmonth, cyear } = req.body;
 
@@ -117,7 +136,7 @@ export const updatePayment = async (req, res) => {
     const updatepay = await PaymentModel.findByIdAndUpdate(
       id,
       { Repname, email, Contactno, BookRef, payRef, cnum, type, cmonth, cyear },
-      { new: true }
+      { new: true, runValidators: true }
     );
     if (!updatepay) {
       return res.status(404).json({ message: "Not found" });
