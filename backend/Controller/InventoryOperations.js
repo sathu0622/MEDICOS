@@ -1,9 +1,8 @@
 import express from "express";
-import InventoryModel from "../Models/Inventory.js"; 
-import cors from 'cors';
+import InventoryModel from "../Models/Inventory.js";
 import multer from 'multer'
 import path from 'path';
-
+import { body, validationResult } from "express-validator";
 
 const router = express.Router();
 
@@ -18,7 +17,23 @@ const storage = multer.diskStorage({
 
   const upload = multer({ storage });
 
-  router.post("/Stock", upload.single("Img"), async (req, res) => {
+router.post(
+    "/Stock",
+    upload.single("Img"),
+    [
+        body("Product").trim().escape().notEmpty().withMessage("Product is required"),
+        body("category").trim().escape().notEmpty().withMessage("Category is required"),
+        body("Formulation").trim().escape(),
+        body("manufecturer").trim().escape(),
+        body("Regulatory_status").trim().escape(),
+        body("Description").trim().escape(),
+        body("lastUpadte").isISO8601().withMessage("Invalid date"),
+    ],
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
       const { Product, category, Formulation, manufecturer, Regulatory_status, Description, lastUpadte } = req.body;
       const Img = req.file ? `uploads/${req.file.filename}` : "";
 

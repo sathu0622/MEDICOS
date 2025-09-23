@@ -1,13 +1,33 @@
 import express from "express";
 import cors from 'cors';
 import PaymentModel from "../Models/Payment.js";
+import { body, validationResult } from "express-validator";
 const router = express.Router();
 
-router.post("/Pay", async (req, res) => {
-    const { userId, Repname, email, Contactno, BookRef, payRef, cnum, type, cmonth, cyear, cvv } = req.body;
+router.post(
+    "/pay",
+    [
+        body("userId").isMongoId().withMessage("Invalid user ID"),
+        body("Repname").trim().escape().notEmpty(),
+        body("email").isEmail().normalizeEmail(),
+        body("Contactno").trim().escape().notEmpty(),
+        body("BookRef").trim().escape().notEmpty(),
+        body("payRef").trim().escape().notEmpty(),
+        body("cnum").isLength({ min: 4, max: 4 }).withMessage("Card number must be last 4 digits"),
+        body("type").trim().escape().notEmpty(),
+        body("cmonth").trim().escape().notEmpty(),
+        body("cyear").trim().escape().notEmpty(),
+    ],
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { userId, Repname, email, Contactno, BookRef, payRef, cnum, type, cmonth, cyear } = req.body;
 
 
-    if (!userId || !Repname || !email || !Contactno || !BookRef || !payRef || !cnum || !type || !cmonth || !cyear || !cvv) {
+        if (!userId || !Repname || !email || !Contactno || !BookRef || !payRef || !cnum || !type || !cmonth || !cyear) {
         return res.status(400).json({ 
             success: false,
             message: "Missing required fields" 
@@ -15,6 +35,7 @@ router.post("/Pay", async (req, res) => {
     }
 
     try {
+        // Only store last 4 digits of card number
         const payment = new PaymentModel({
             userId,
             Repname,
@@ -22,13 +43,12 @@ router.post("/Pay", async (req, res) => {
             Contactno,
             BookRef,
             payRef,
-            cnum, 
+            cnum, // This is already last 4 digits from frontend
             type,
             cmonth,
             cyear,
-            cvv, 
+            // Do NOT store CVV
         });
-
         await payment.save();
 
 

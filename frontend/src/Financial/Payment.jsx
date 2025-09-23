@@ -71,11 +71,6 @@ const Payment = () => {
     } else if (!emailRegex.test(payment.email)) {
       newErrors.email = "Invalid email format";
     }
-    if (!payment.Contactno.trim()) {
-      newErrors.Contactno = "Contact number is required";
-    } else if (!phoneRegex.test(payment.Contactno)) {
-      newErrors.Contactno = "Must be 10 digits";
-    }
     if (!payment.BookRef.trim()) newErrors.BookRef = "Booking reference is required";
     if (!payment.payRef.trim()) newErrors.payRef = "Payment reference is required";
     if (!payment.cnum.trim()) {
@@ -117,11 +112,11 @@ const Payment = () => {
         Contactno: payment.Contactno.trim(),
         BookRef: payment.BookRef.trim(),
         payRef: payment.payRef.trim(),
-        cnum: payment.cnum.trim(),
+        cnum: payment.cnum.slice(-4), // Only last 4 digits
         type: payment.type,
         cmonth: payment.cmonth,
         cyear: payment.cyear,
-        cvv: payment.cvv
+        // Do NOT send CVV for storage
       };
   
       const response = await axios.post(
@@ -436,7 +431,7 @@ const Payment = () => {
                     placeholder="BOOK123456" 
                     value={payment.BookRef}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 border bg-white placeholder-black rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
+                        className={`w-full pl-10 pr-4 py-3 border bg-white placeholder-gray text-black rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
                       errors.BookRef ? "border-red-500" : "border-gray-300"
                     }`}
                   />
@@ -454,7 +449,7 @@ const Payment = () => {
                     placeholder="PAY789012" 
                     value={payment.payRef}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 border text-black placeholder-black bg-white  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
+                        className={`w-full pl-10 pr-4 py-3 border placeholder-gray text-black bg-white  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
                       errors.payRef ? "border-red-500" : "border-gray-300"
                     }`}
                   />
@@ -522,7 +517,7 @@ const Payment = () => {
                           errors.cmonth ? "border-red-500" : "border-gray-300"
                         }`}
                       >
-                        <option value="" disabled className="placeholder-black">Month</option>
+                            <option value="" disabled className="placeholder-gray">Month</option>
                         {Array.from({length: 12}, (_, i) => (
                           <option key={i} value={String(i+1).padStart(2, '0')}>
                             {String(i+1).padStart(2, '0')}
@@ -559,10 +554,10 @@ const Payment = () => {
                       type="password"
                       maxLength="3"
                       name="cvv"
-                      placeholder="123"
+                          placeholder="000"
                       value={payment.cvv}
                       onChange={handleChange}
-                      className={`w-full pl-10 pr-4 py-3 placeholder-black border bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
+                          className={`w-full pl-10 pr-4 py-3 placeholder-gray border text-black bg-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${
                         errors.cvv ? "border-red-500" : "border-gray-300"
                       }`}
                     />
