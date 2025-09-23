@@ -11,43 +11,49 @@ import OrderOperations from './Controller/OrderOperations.js'
 import FAQOperations from './Controller/FAQOperations.js'
 import passport from "./config/passport.js";
 import session from "express-session";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+
 
 dotenv.config();
 const app = express();
 app.use(express.json());
+app.use(helmet());
+
+const limiter = rateLimit({ windowMs: 15*60*1000, max: 100 });
+app.use(limiter);
 
 app.use('/uploads', express.static('public/uploads'));
 
-app.use(
-  session({
-    secret: "mysecret",
-    resave: false,
-    saveUninitialized: true,
-  })
-);
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 1000*60*60
+  }
+}));
 
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS not allowed"), false);
     }
-    return callback(null, true);
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ["GET","POST","PUT","DELETE"],
   credentials: true
 }));
 
-// app.options('http://localhost:5173', cors());
 
 app.use("/UserOperations", UserOperations);
 app.use("/AppointmentOperations", AppointmentOperations);
@@ -65,6 +71,10 @@ mongoose.connect(process.env.db, {
 .then(() => console.log("Connected to MongoDB"))
 .catch(err => console.log("MongoDB connection error:", err));
 
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Server error" });
+});
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
