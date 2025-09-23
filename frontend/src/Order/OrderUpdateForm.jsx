@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import DOMPurify from 'dompurify'; // Add this for XSS protection
 
 const OrderUpdateForm = () => {
     const navigate = useNavigate();
@@ -47,41 +48,59 @@ const OrderUpdateForm = () => {
         setOrder({ ...order, [event.target.name]: event.target.value });
     };
 
-    const validateForm = () => {
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailPattern.test(order.email)) {
-            alert("Invalid email address.");
-            return false;
-        }
-        const phonePattern = /^\d{10}$/;
-        if (!phonePattern.test(order.contactNo)) {
-            alert("Contact number must be exactly 10 digits.");
-            return false;
-        }
-        if (!order.qty || isNaN(order.qty) || order.qty <= 0) {
-            alert("Quantity must be greater than zero.");
-            return false;
-        }
-        if (!order.orderDate) {
-            alert("Please select an order date.");
-            return false;
-        }
-        return true;
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+
+        // Sanitize input to prevent XSS
+        const sanitizedValue = DOMPurify.sanitize(value.trim());
+
+        setOrder(prev => ({
+            ...prev,
+            [name]: sanitizedValue
+        }));
     };
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        if (!validateForm()) return;
-        axios.put(`http://localhost:4000/OrderOperations/updateorder/${id}`, order)
-            .then((response) => {
-                console.log('Update success:', response.data);
-                alert("Order updated successfully!");
+    const validateForm = () => {
+        const errors = {};
+
+        if (!order.name.trim()) errors.name = "Name is required";
+        if (!order.email.trim()) errors.email = "Email is required";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(order.email)) {
+            errors.email = "Invalid email format";
+        }
+        if (!/^[0-9]{10}$/.test(order.contactNo)) {
+            errors.contactNo = "Contact number must be 10 digits";
+        }
+        if (!order.medicineCategory.trim()) errors.medicineCategory = "Medicine category is required";
+        if (!order.shippingAddress.trim()) errors.shippingAddress = "Shipping address is required";
+        if (!order.qty || order.qty < 1) errors.qty = "Quantity must be at least 1";
+
+        return errors;
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const errors = validateForm();
+        if (Object.keys(errors).length > 0) {
+            alert('Please fix the following errors: ' + Object.values(errors).join(', '));
+            return;
+        }
+
+        try {
+            const response = await axios.put(
+                `http://localhost:4000/OrderOperations/updateorder/${id}`,
+                order
+            );
+
+            if (response.data.success) {
+                alert('Order updated successfully!');
                 navigate('/OrdersTable');
-            })
-            .catch((error) => {
-                console.error('Error updating order:', error);
-                alert(error.response?.data?.message || "Error updating order!");
-            });
+            }
+        } catch (error) {
+            console.error('Update failed:', error.response?.data?.message);
+            alert('Failed to update order: ' + (error.response?.data?.message || 'Unknown error'));
+        }
     };
 
     return (

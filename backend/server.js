@@ -3,12 +3,12 @@ import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv"; 
 import UserOperations from './Controller/UserOperations.js';
-import AppointmentOperations from './Controller/AppointmentOperations.js'
-import ScheduleOperations from './Controller/ScheduleOperations.js'
-import InventoryOperations from './Controller/InventoryOperations.js'
-import PaymentOperations from './Controller/PaymentOperations.js'
-import OrderOperations from './Controller/OrderOperations.js'
-import FAQOperations from './Controller/FAQOperations.js'
+import AppointmentOperations from './Routes/appointmentRoutes.js'
+import ScheduleOperations from './Routes/scheduleRoutes.js'
+import InventoryOperations from './Routes/inventoryRoutes.js'
+import PaymentOperations from './Routes/paymentRoutes.js'
+import OrderOperations from './Routes/orderRoutes.js'
+import FAQOperations from './Routes/faqRoutes.js'
 import passport from "./config/passport.js";
 import session from "express-session";
 import helmet from "helmet";
@@ -23,8 +23,25 @@ app.use(express.json());
 app.use(helmet());
 app.use(cookieParser())
 
-// const limiter = rateLimit({ windowMs: 15*60*1000, max: 100 });
-// app.use(limiter);
+// Enhanced rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: {
+    error: "Too many requests from this IP, please try again later."
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to API routes only
+app.use('/UserOperations', limiter);
+app.use('/PaymentOperations', limiter);
+app.use('/OrderOperations', limiter);
+app.use('/InventoryOperations', limiter);
+app.use('/AppointmentOperations', limiter);
+app.use('/ScheduleOperations', limiter);
+app.use('/FAQOperations', limiter);
 
 app.use('/uploads', express.static('public/uploads'));
 
@@ -36,7 +53,7 @@ app.use(session({
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 1000*60*60
+    maxAge: 1000 * 60 * 60
   }
 }));
 
@@ -82,7 +99,7 @@ app.use(cors({
       callback(new Error("CORS not allowed"), false);
     }
   },
-  methods: ["GET","POST","PUT","DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
 

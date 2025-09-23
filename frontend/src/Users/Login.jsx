@@ -192,7 +192,7 @@ const Login = () => {
             <label className="block text-gray-700 text-sm font-medium mb-1">Email</label>
             <input
               type="email"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007BFF]"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007BFF] bg-white text-black"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -203,7 +203,7 @@ const Login = () => {
             <label className="block text-gray-700 text-sm font-medium mb-1">Password</label>
             <input
               type="password"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007BFF]"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#007BFF] bg-white text-black"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
