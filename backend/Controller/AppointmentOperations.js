@@ -1,12 +1,8 @@
-import express from "express";
-import BookModel from "../Models/Booking.js"; 
-import Slot from "../Models/Schedule.js"
-import cors from 'cors';
+import BookModel from "../Models/Booking.js";
+import Slot from "../Models/Schedule.js";
 
-const router = express.Router();
-
-
-router.post("/Appointment", async (req, res) => {
+// Create Appointment
+export const createAppointment = async (req, res) => {
     console.log("Incoming appointment:", req.body);
     const { userId, slotId, repname, contact, reason, address, company, outcome, date, atime } = req.body;
 
@@ -17,7 +13,7 @@ router.post("/Appointment", async (req, res) => {
     try {
         const appointment = new BookModel({
             userId,
-            slotId,     // ✅ FIXED LINE: Added this!
+            slotId,
             repname,
             contact,
             reason,
@@ -31,33 +27,28 @@ router.post("/Appointment", async (req, res) => {
         await appointment.save();
         await Slot.findByIdAndUpdate(slotId, { isBooked: true });
 
-        res.status(201).json({ 
+        res.status(201).json({
             success: true,
             message: "Appointment scheduled successfully!",
             appointmentId: appointment._id
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             message: "Error creating appointment",
-            error: err.message 
+            error: err.message
         });
     }
-});
+};
 
-
-
-// In your backend route
-router.get("/getappointment/user/:userId", async (req, res) => {
+// Get appointments by userId
+export const getAppointmentsByUser = async (req, res) => {
     try {
         const appointments = await BookModel.find({ userId: req.params.userId })
             .sort({ createdAt: -1 });
 
-        res.json({
-            success: true,
-            appointments  // Make sure this matches frontend expectation
-        });
+        res.json({ success: true, appointments });
     } catch (err) {
         console.error("Error:", err);
         res.status(500).json({
@@ -65,67 +56,62 @@ router.get("/getappointment/user/:userId", async (req, res) => {
             message: "Error fetching appointments"
         });
     }
-});
+};
 
-
-
-router.get("/getappointment", async (req, res) => {
+// Get all appointments
+export const getAllAppointments = async (req, res) => {
     try {
-        const Appointment = await BookModel.find({});
-        res.json(Appointment);
+        const appointments = await BookModel.find({});
+        res.json(appointments);
     } catch (err) {
         res.status(500).json({ message: "Error fetching bookings", error: err });
     }
-});
+};
 
-
-router.get("/get/:id", async (req, res) => {
-    const id = req.params.id;
+// Get appointment by ID
+export const getAppointmentById = async (req, res) => {
+    const { id } = req.params;
     try {
-        const Appointment = await BookModel.findById(id);
-        if (!Appointment) {
+        const appointment = await BookModel.findById(id);
+        if (!appointment) {
             return res.status(404).json({ message: "Appointment Not available" });
         }
-        res.json(Appointment);
+        res.json(appointment);
     } catch (err) {
-        res.status(500).json({ message: "Error  ", error: err });
+        res.status(500).json({ message: "Error", error: err });
     }
-});
+};
 
-
-
-
-
-router.delete("/deleteappointment/:id", async (req, res) => {
-    const id = req.params.id;
+// Delete appointment
+export const deleteAppointment = async (req, res) => {
+    const { id } = req.params;
     try {
-        const deleteappointment = await BookModel.findByIdAndDelete(id);
-        if (!deleteappointment) {
-            return res.status(404).json({ message: " not found" });
+        const deleted = await BookModel.findByIdAndDelete(id);
+        if (!deleted) {
+            return res.status(404).json({ message: "Appointment not found" });
         }
         res.json({ message: "Appointment deleted successfully" });
     } catch (err) {
-        res.status(500).json({ message: "Error deleting ", error: err });
+        res.status(500).json({ message: "Error deleting", error: err });
     }
-});
+};
 
-router.put("/update/:id", async (req, res) => {
-    const id = req.params.id;
-    const { userId, slotId, repname, contact, reason, address, company, outcome, date, atime }  = req.body;
+// Update appointment
+export const updateAppointment = async (req, res) => {
+    const { id } = req.params;
+    const { userId, slotId, repname, contact, reason, address, company, outcome, date, atime } = req.body;
 
     try {
-        const upadteappointment = await BookModel.findByIdAndUpdate(
-            id, 
-            { userId, slotId, repname, contact, reason, address, company, outcome, date, atime } , 
-            { new: true } 
+        const updated = await BookModel.findByIdAndUpdate(
+            id,
+            { userId, slotId, repname, contact, reason, address, company, outcome, date, atime },
+            { new: true }
         );
-        if (!upadteappointment) {
-            return res.status(404).json({ message: " not found" });
+        if (!updated) {
+            return res.status(404).json({ message: "Appointment not found" });
         }
-        res.json(upadteappointment);
+        res.json(updated);
     } catch (err) {
-        res.status(500).json({ message: "Error updating ", error: err });
+        res.status(500).json({ message: "Error updating", error: err });
     }
-});
-
-export default router;
+};
