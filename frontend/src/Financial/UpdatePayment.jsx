@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { AuthContext } from "../context/AuthContext";
 
 const UpdatePayment = () => {
     const { id } = useParams(); 
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
+    const { authToken } = useContext(AuthContext);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [payment, setPayment] = useState({
@@ -28,7 +30,7 @@ const UpdatePayment = () => {
                     `http://localhost:4000/PaymentOperations/getpay/${id}`,
                     {
                         headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                            'Authorization': `Bearer ${authToken}`
                         }
                     }
                 );
@@ -40,7 +42,7 @@ const UpdatePayment = () => {
             }
         };
         fetchPayment();
-    }, [id, navigate]);
+    }, [id, navigate, authToken]);
 
     const validateForm = () => {
         const newErrors = {};
@@ -91,7 +93,7 @@ const UpdatePayment = () => {
                 },
                 {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Authorization': `Bearer ${authToken}`,
                         'Content-Type': 'application/json'
                     }
                 }

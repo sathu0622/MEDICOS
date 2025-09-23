@@ -452,14 +452,15 @@
 
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { FaTrash, FaEdit, FaFilePdf, FaTimes } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
+import { AuthContext } from '../context/AuthContext';
 const OrderList = () => {
+    const { authToken, user } = useContext(AuthContext);
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -475,10 +476,8 @@ const OrderList = () => {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const token = localStorage.getItem('authToken');
-                const userData = JSON.parse(localStorage.getItem('userData'));
-                
-                if (!userData?.email) {
+              
+                if (!user?.email) {
                     throw new Error('User not authenticated');
                 }
 
@@ -486,7 +485,7 @@ const OrderList = () => {
                     `http://localhost:4000/OrderOperations/getorder/user/${userData.email}`,
                     {
                         headers: {
-                            'Authorization': `Bearer ${token}`
+                            'Authorization': `Bearer ${authToken}`
                         }
                     }
                 );
@@ -501,7 +500,7 @@ const OrderList = () => {
         };
 
         fetchOrders();
-    }, []);
+    }, [authToken, user]);
     
     const handleDelete = (id) => {
         if (window.confirm("Are you sure you want to cancel this order?")) {
@@ -534,13 +533,12 @@ const OrderList = () => {
 
     const handleEditFormSubmit = async (orderId) => {
         try {
-            const token = localStorage.getItem('authToken');
-            const response = await axios.put(
+           await axios.put(
                 `http://localhost:4000/OrderOperations/updateorder/${orderId}`,
                 editFormData,
                 {
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${authToken}`
                     }
                 }
             );

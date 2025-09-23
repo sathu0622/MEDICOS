@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { AuthContext } from "../context/AuthContext";
 
 const EditPay = () => {
     const { id } = useParams(); 
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-
+const { user, token } = useContext(AuthContext);
     const [payment, setPayment] = useState({
         Repname: '',
         email: '',
@@ -22,14 +23,20 @@ const EditPay = () => {
     });
 
     useEffect(() => {
+         if (!token) {
+      alert("User not authenticated");
+      navigate("/login");
+      return;
+    }
+
         const fetchPayment = async () => {
             try {
                 const response = await axios.get(
                     `http://localhost:4000/PaymentOperations/getpay/${id}`,
                     {
                         headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                        }
+                            'Authorization': `Bearer ${token}`,
+                        },
                     }
                 );
                 setPayment(response.data);
@@ -40,7 +47,7 @@ const EditPay = () => {
             }
         };
         fetchPayment();
-    }, [id, navigate]);
+    }, [id, navigate, token]);
 
     const validateForm = () => {
         const newErrors = {};
@@ -91,7 +98,7 @@ const EditPay = () => {
                 },
                 {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 }

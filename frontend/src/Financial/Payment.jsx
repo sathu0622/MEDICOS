@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaCreditCard, FaUser, FaEnvelope, FaPhone, FaFileAlt, FaLock } from "react-icons/fa";
-
+import { AuthContext } from "../context/AuthContext";
 
 const Payment = () => {
+   const { user, token } = useContext(AuthContext); 
   const [payment, setPayment] = useState({
     Repname: "",
     email: "",
@@ -22,17 +23,16 @@ const Payment = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get user data from localStorage
-    const userData = JSON.parse(localStorage.getItem("userData"));
-    if (userData) {
+   
+    if (user) {
       setPayment((prev) => ({
         ...prev,
-        Repname: userData.name || "",
-        email: userData.email || "",
-        Contactno: userData.mobile || ""
+        Repname: user.name || "",
+        email: user.email || "",
+        Contactno: user.mobile || ""
       }));
     }
-  }, []);
+  }, [user]);
 
   // Helper to format card number with spaces
   function formatCardNumber(value) {
@@ -99,22 +99,19 @@ const Payment = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
   
-    if (!validateForm()) {
+    if (!validateForm()) return;
+     if (!user?._id) {
+      setErrors({ form: "User not authenticated" });
       return;
     }
   
     setSubmitLoading(true);
+    setErrors({});
   
     try {
-      const token = localStorage.getItem('authToken');
-      const userData = JSON.parse(localStorage.getItem('userData'));
-  
-      if (!userData?._id) {
-        throw new Error('User not authenticated');
-      }
-  
+    
       const paymentData = {
-        userId: userData._id,
+        userId: user._id,
         Repname: payment.Repname.trim(),
         email: payment.email.trim(),
         Contactno: payment.Contactno.trim(),
