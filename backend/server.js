@@ -14,6 +14,7 @@ import session from "express-session";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
+import csurf from "csurf";
 
 
 dotenv.config();
@@ -38,6 +39,35 @@ app.use(session({
     maxAge: 1000*60*60
   }
 }));
+
+const isProd = process.env.NODE_ENV === "production";
+const csrfProtection = csurf({
+  cookie: {
+    httpOnly: true, // frontend should be able to read CSRF cookie (or you can use CSRF endpoint response)
+    secure: false,
+    sameSite: "lax",
+  },
+});
+
+app.get("/csrf-token", csrfProtection, (req, res) => {
+  // set cookie AND return token
+  res.cookie("_csrf", req.csrfToken(), {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+  });
+  res.json({ csrfToken: req.csrfToken() });
+});
+
+
+// CSRF error handler - make sure it's before your generic error handler (or inside it)
+app.use((err, req, res, next) => {
+  if (err && err.code === "EBADCSRFTOKEN") {
+    // invalid CSRF token
+    return res.status(403).json({ message: "Invalid CSRF token" });
+  }
+  next(err);
+});
 
 
 app.use(passport.initialize());

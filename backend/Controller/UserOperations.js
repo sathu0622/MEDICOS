@@ -5,9 +5,17 @@ import { body, validationResult } from "express-validator";
 import UserModel from "../Models/User.js";
 import { authenticateUser, authorizeRoles } from "../middleware/authenticateUser.js";
 import passport from "passport";
-
+import csurf from "csurf";
 
 const router = express.Router();
+
+const csrfProtection = csurf({
+  cookie: {
+    httpOnly: true, // frontend should be able to read CSRF cookie (or you can use CSRF endpoint response)
+    secure: false,
+    sameSite: "lax",
+  },
+});
 
 // Generate Tokens
 const generateAccessToken = (user) => {
@@ -52,6 +60,7 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
 // REGISTER
 router.post(
   "/register",
+   csrfProtection,
   [
     body("name").notEmpty().withMessage("Name is required"),
     body("email").isEmail().withMessage("Valid email required"),

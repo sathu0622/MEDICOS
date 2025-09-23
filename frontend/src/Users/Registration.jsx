@@ -1,54 +1,104 @@
-import { useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+// import { useState } from 'react';
+// import axios from 'axios';
+// import { useNavigate } from 'react-router-dom';
+// import Head from "../pages/WelcomeHeader";
+// import api from "../services/api";
+
+// const Registration = () => {
+//     const [formData, setFormData] = useState({
+//         name: '',
+//         email: '',
+//         mobile: '',
+//         type: '',
+//         gender: '',
+//         password: '',
+//         cpassword: ''
+//     });
+//     const [error, setError] = useState('');
+
+//     const navigate = useNavigate();
+
+//     const handleChange = (event) => {
+//         setFormData({ ...formData, [event.target.name]: event.target.value });
+//     };
+
+//     const handleSubmit = async (event) => {
+//   event.preventDefault();
+
+//   if (formData.password !== formData.cpassword) {
+//     setError("Passwords do not match!");
+//     return;
+//   }
+//   setError('');
+
+//   try {
+//       const { cpassword, ...payload } = formData;
+//       await axios.post(
+//       "http://localhost:4000/UserOperations/register",
+//       payload,
+//       { headers: { "Content-Type": "application/json" } }
+//     );
+//     alert("Your Profile Created!");
+//     navigate("/Login");
+//   } catch (error) {
+//     console.error("Registration error:", error.response?.data);
+//     if (error.response?.data?.errors) {
+//       setError(error.response.data.errors.map(err => err.msg).join(", "));
+//     } else {
+//         setError(error.response?.data?.error || error.response?.data?.message || "Error registering user!");
+//     }
+//   }
+// };
+
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Head from "../pages/WelcomeHeader";
+import api,{initCsrf} from "../services/api";
 
 const Registration = () => {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        mobile: '',
-        type: '',
-        gender: '',
-        password: '',
-        cpassword: ''
-    });
-    const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    mobile: "",
+    type: "",
+    gender: "",
+    password: "",
+    cpassword: "",
+  });
+  const [error, setError] = useState("");
 
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const handleChange = (event) => {
-        setFormData({ ...formData, [event.target.name]: event.target.value });
-    };
+  const handleChange = (event) => {
+    setFormData({ ...formData, [event.target.name]: event.target.value });
+  };
+useEffect(() => {
+  initCsrf(); // fetch CSRF token once on mount
+}, []);
 
-    const handleSubmit = async (event) => {
+  const handleSubmit = async (event) => {
   event.preventDefault();
 
   if (formData.password !== formData.cpassword) {
     setError("Passwords do not match!");
     return;
   }
-  setError('');
 
   try {
-      const { cpassword, ...payload } = formData;
-      await axios.post(
-      "http://localhost:4000/UserOperations/register",
-      payload,
-      { headers: { "Content-Type": "application/json" } }
-    );
+    const { cpassword, ...payload } = formData;
+
+    // Step 2: POST with token + cookie
+    await api.post("/UserOperations/register", payload);
+
     alert("Your Profile Created!");
     navigate("/Login");
   } catch (error) {
     console.error("Registration error:", error.response?.data);
-    if (error.response?.data?.errors) {
-      setError(error.response.data.errors.map(err => err.msg).join(", "));
-    } else {
-        setError(error.response?.data?.error || error.response?.data?.message || "Error registering user!");
-    }
+    setError(
+      error.response?.data?.message || "Error registering user!"
+    );
   }
 };
-
 
 
     return (
