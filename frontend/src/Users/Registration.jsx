@@ -72,9 +72,9 @@ const Registration = () => {
   const handleChange = (event) => {
     setFormData({ ...formData, [event.target.name]: event.target.value });
   };
-useEffect(() => {
-  initCsrf(); // fetch CSRF token once on mount
-}, []);
+// useEffect(() => {
+//   initCsrf(); // fetch CSRF token once on mount
+// }, []);
 
   const handleSubmit = async (event) => {
   event.preventDefault();

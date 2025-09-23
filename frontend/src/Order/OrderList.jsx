@@ -453,14 +453,14 @@
 
 
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-import { FaTrash, FaEdit, FaFilePdf, FaTimes } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { FaTrash, FaEdit, FaFilePdf } from 'react-icons/fa';
+import { AuthContext } from '../context/AuthContext';
+import api from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { AuthContext } from '../context/AuthContext';
+
 const OrderList = () => {
-    const { authToken, user } = useContext(AuthContext);
+    const { user } = useContext(AuthContext); // only user info
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -476,21 +476,12 @@ const OrderList = () => {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-              
                 if (!user?.email) {
                     throw new Error('User not authenticated');
                 }
 
-                const response = await axios.get(
-                    `http://localhost:4000/OrderOperations/getorder/user/${userData.email}`,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${authToken}`
-                        }
-                    }
-                );
-
-                setOrders(response.data.orders);
+                const response = await api.get(`/OrderOperations/getorder/user/${user.email}`);
+                setOrders(response.data.orders || []);
                 setLoading(false);
             } catch (err) {
                 console.error("Error fetching data:", err);
@@ -500,15 +491,17 @@ const OrderList = () => {
         };
 
         fetchOrders();
-    }, [authToken, user]);
-    
-    const handleDelete = (id) => {
+    }, [user]);
+
+    const handleDelete = async (id) => {
         if (window.confirm("Are you sure you want to cancel this order?")) {
-            axios.delete(`http://localhost:4000/OrderOperations/deleteorder/${id}`)
-                .then(() => {
-                    setOrders(orders.filter(order => order._id !== id));
-                })
-                .catch(err => console.error("Error deleting:", err));
+            try {
+                await api.delete(`/OrderOperations/deleteorder/${id}`);
+                setOrders(orders.filter(order => order._id !== id));
+            } catch (err) {
+                console.error("Error deleting order:", err);
+                setError(err.response?.data?.message || "Error deleting order");
+            }
         }
     };
 
@@ -525,25 +518,13 @@ const OrderList = () => {
 
     const handleEditFormChange = (e) => {
         const { name, value } = e.target;
-        setEditFormData({
-            ...editFormData,
-            [name]: value
-        });
+        setEditFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleEditFormSubmit = async (orderId) => {
         try {
-           await axios.put(
-                `http://localhost:4000/OrderOperations/updateorder/${orderId}`,
-                editFormData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                }
-            );
-
-            setOrders(orders.map(order => 
+            await api.put(`/OrderOperations/updateorder/${orderId}`, editFormData);
+            setOrders(orders.map(order =>
                 order._id === orderId ? { ...order, ...editFormData } : order
             ));
             setEditingOrder(null);
@@ -555,22 +536,21 @@ const OrderList = () => {
 
     const generatePDF = () => {
         const doc = new jsPDF();
-        
+
         doc.setFontSize(24);
         doc.setTextColor(3, 123, 255);
         doc.text('MEDICOS', 14, 20);
-        
+
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
         doc.text('My Orders Report', 14, 30);
-        
+
         doc.setFontSize(10);
         doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 37);
         doc.text(`Customer: ${orders[0]?.name || ''}`, 14, 44);
         doc.text(`Email: ${orders[0]?.email || ''}`, 14, 51);
-        
         doc.text(`Total Orders: ${orders.length}`, 14, 58);
-        
+
         const tableData = orders.map(order => [
             order.medicineCategory,
             new Date(order.orderDate).toLocaleDateString(),
@@ -583,19 +563,9 @@ const OrderList = () => {
             head: [['Category', 'Order Date', 'Quantity', 'Shipping Address', 'Remarks']],
             body: tableData,
             startY: 65,
-            styles: { 
-                fontSize: 8,
-                cellPadding: 2,
-                overflow: 'linebreak'
-            },
-            headStyles: { 
-                fillColor: [3, 123, 255],
-                textColor: 255,
-                fontStyle: 'bold'
-            },
-            alternateRowStyles: { 
-                fillColor: [245, 245, 245]
-            },
+            styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+            headStyles: { fillColor: [3, 123, 255], textColor: 255, fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 30 },
             columnStyles: {
                 0: { cellWidth: 30 },

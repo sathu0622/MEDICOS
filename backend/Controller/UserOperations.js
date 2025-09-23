@@ -60,7 +60,6 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
 // REGISTER
 router.post(
   "/register",
-   csrfProtection,
   [
     body("name").notEmpty().withMessage("Name is required"),
     body("email").isEmail().withMessage("Valid email required"),

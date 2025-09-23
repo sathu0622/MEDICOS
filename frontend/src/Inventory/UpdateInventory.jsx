@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const UpdateInventory = () => {
@@ -20,25 +20,34 @@ const UpdateInventory = () => {
     const [preview, setPreview] = useState(null);
 
     useEffect(() => {
-        axios.get(`http://localhost:4000/InventoryOperations/getstock/${id}`)
-            .then((result) => {
-                if (result.data) {
-                    setStock({
-                        Product: result.data.Product || '',
-                        category: result.data.category || '',
-                        Formulation: result.data.Formulation || '',
-                        manufecturer: result.data.manufecturer || '',
-                        Regulatory_status: result.data.Regulatory_status || '',
-                        Description: result.data.Description || '',
-                        lastUpadte: result.data.lastUpadte ? result.data.lastUpadte.split('T')[0] : ''
-                    });
-                    if (result.data.Img) {
-                        setPreview(`http://localhost:4000${result.data.Img}`);
-                    }
+        const fetchStock = async () => {
+            try {
+            const response = await api.get(`/InventoryOperations/getstock/${id}`);
+            if (response.data) {
+                setStock({
+                Product: response.data.Product || '',
+                category: response.data.category || '',
+                Formulation: response.data.Formulation || '',
+                manufecturer: response.data.manufecturer || '',
+                Regulatory_status: response.data.Regulatory_status || '',
+                Description: response.data.Description || '',
+                lastUpadte: response.data.lastUpadte ? response.data.lastUpadte.split('T')[0] : ''
+                });
+
+                if (response.data.Img) {
+                setPreview(`http://localhost:4000${response.data.Img}`);
                 }
-            })
-            .catch((err) => console.log('Error fetching stock:', err));
-    }, [id]);
+            }
+            } catch (err) {
+            console.error('Error fetching stock:', err);
+            setError(err.response?.data?.message || err.message || 'Failed to fetch stock');
+            } finally {
+            setLoading(false);
+            }
+        };
+
+        fetchStock();
+        }, [id]);
 
     const handleChange = (event) => {
         setStock({ ...stock, [event.target.name]: event.target.value });

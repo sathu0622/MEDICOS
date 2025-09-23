@@ -109,8 +109,8 @@
 
 
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import axios from 'axios';
+import { Link } from 'react-router-dom';
+import api from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -118,7 +118,6 @@ const InventoryPage = () => {
     const [stock, setStock] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { id } = useParams();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
@@ -126,19 +125,16 @@ const InventoryPage = () => {
     useEffect(() => {
         const fetchStock = async () => {
             try {
-                const response = await axios.get('http://localhost:4000/InventoryOperations/getstock');
-                setStock(response.data);
-                setLoading(false);
-
+                const response = await api.get('/InventoryOperations/getstock');
                 const formattedStock = response.data.map(item => ({
                     ...item,
-                    formattedDate: item.lastUpadte ? new Date(item.lastUpadte).toLocaleDateString() : 'N/A'
+                    formattedDate: item.lastUpdate ? new Date(item.lastUpdate).toLocaleDateString() : 'N/A'
                 }));
                 setStock(formattedStock);
-                setLoading(false);
             } catch (err) {
                 console.error("Error fetching stock:", err);
-                setError("Failed to load stock data");
+                setError(err.response?.data?.message || err.message || "Failed to load stock data");
+            } finally {
                 setLoading(false);
             }
         };
@@ -147,140 +143,109 @@ const InventoryPage = () => {
     }, []);
 
     const handleDelete = async (stockId) => {
+        if (!window.confirm("Are you sure you want to delete this stock item?")) return;
+
         try {
-            await axios.delete(`http://localhost:4000/InventoryOperations/deletestock/${stockId}`);
-            setStock(prevStock => prevStock.filter(item => item._id !== stockId));
+            await api.delete(`/InventoryOperations/deletestock/${stockId}`);
+            setStock(prev => prev.filter(item => item._id !== stockId));
         } catch (err) {
             console.error("Error deleting stock:", err);
-            alert("Failed to delete stock item");
+            alert(err.response?.data?.message || "Failed to delete stock item");
         }
     };
 
-    // Get unique categories for filter dropdown
-    const categories = [...new Set(stock.map(item => item.category))];
-    const statuses = [...new Set(stock.map(item => item.Regulatory_status))];
+    const categories = ['all', ...new Set(stock.map(item => item.category))];
+    const statuses = ['all', ...new Set(stock.map(item => item.Regulatory_status))];
 
-    // Filter stock based on search and filters
     const filteredStock = stock.filter(item => {
-        const matchesSearch = item.Product.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            item.Formulation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            item.manufecturer.toLowerCase().includes(searchTerm.toLowerCase());
-        
+        const matchesSearch =
+            item.Product.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.Formulation.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.manufecturer.toLowerCase().includes(searchTerm.toLowerCase());
+
         const matchesCategory = filterCategory === 'all' || item.category === filterCategory;
         const matchesStatus = filterStatus === 'all' || item.Regulatory_status === filterStatus;
-        
+
         return matchesSearch && matchesCategory && matchesStatus;
     });
 
-    if (loading) return (
-        <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-    );
-    
-    if (error) return (
-        <div className="p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
-            <p className="font-bold">Error</p>
-            <p>{error}</p>
-        </div>
-    );
-
-
-    /// pdf inventory 
     const generatePDF = () => {
         const doc = new jsPDF();
-        
-        // Add title with MEDICOS branding
         doc.setFontSize(24);
-        doc.setTextColor(3, 123, 255); // MEDICOS blue color
+        doc.setTextColor(3, 123, 255);
         doc.text('MEDICOS', 14, 20);
-        
+
         doc.setFontSize(16);
-        doc.setTextColor(0, 0, 0); // Reset to black
+        doc.setTextColor(0, 0, 0);
         doc.text('Inventory Report', 14, 30);
-        
-        // Add generation date and filters info
+
+        let yOffset = 37;
         doc.setFontSize(10);
-        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 37);
-        
-        // Add filter information if any filters are active
-        let yOffset = 44;
-        if (filterCategory !== 'all') {
-            doc.text(`Category Filter: ${filterCategory}`, 14, yOffset);
-            yOffset += 7;
-        }
-        if (filterStatus !== 'all') {
-            doc.text(`Status Filter: ${filterStatus}`, 14, yOffset);
-            yOffset += 7;
-        }
-        if (searchTerm) {
-            doc.text(`Search Term: ${searchTerm}`, 14, yOffset);
-            yOffset += 7;
-        }
-        
-        // Add summary
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, yOffset);
+        yOffset += 7;
+        if (filterCategory !== 'all') { doc.text(`Category Filter: ${filterCategory}`, 14, yOffset); yOffset += 7; }
+        if (filterStatus !== 'all') { doc.text(`Status Filter: ${filterStatus}`, 14, yOffset); yOffset += 7; }
+        if (searchTerm) { doc.text(`Search Term: ${searchTerm}`, 14, yOffset); yOffset += 7; }
         doc.text(`Total Items: ${stock.length}`, 14, yOffset);
         doc.text(`Filtered Items: ${filteredStock.length}`, 14, yOffset + 7);
-        
-        // Prepare table data
+
         const tableData = filteredStock.map(item => [
             item.Product,
             item.category,
             item.Formulation,
             item.manufecturer,
             item.Regulatory_status,
-            new Date(item.lastUpadte).toLocaleDateString(),
+            item.lastUpdate ? new Date(item.lastUpdate).toLocaleDateString() : 'N/A',
             item.Description
         ]);
 
-        // Add table with improved styling
         autoTable(doc, {
             head: [['Product', 'Category', 'Formulation', 'Manufacturer', 'Status', 'Last Update', 'Description']],
             body: tableData,
             startY: yOffset + 15,
-            styles: { 
-                fontSize: 8,
-                cellPadding: 2,
-                overflow: 'linebreak'
-            },
-            headStyles: { 
-                fillColor: [3, 123, 255], // MEDICOS blue
-                textColor: 255,
-                fontStyle: 'bold'
-            },
-            alternateRowStyles: { 
-                fillColor: [245, 245, 245]
-            },
+            styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+            headStyles: { fillColor: [3, 123, 255], textColor: 255, fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 30 },
             columnStyles: {
-                0: { cellWidth: 30 }, // Product
-                1: { cellWidth: 20 }, // Category
-                2: { cellWidth: 25 }, // Formulation
-                3: { cellWidth: 25 }, // Manufacturer
-                4: { cellWidth: 20 }, // Status
-                5: { cellWidth: 20 }, // Last Update
-                6: { cellWidth: 40 }  // Description
+                0: { cellWidth: 30 },
+                1: { cellWidth: 20 },
+                2: { cellWidth: 25 },
+                3: { cellWidth: 25 },
+                4: { cellWidth: 20 },
+                5: { cellWidth: 20 },
+                6: { cellWidth: 40 }
             }
         });
 
-        // Add footer
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(128);
-            doc.text(
-                'MEDICOS - Inventory Management System',
+            doc.text('MEDICOS - Inventory Management System',
                 doc.internal.pageSize.width / 2,
                 doc.internal.pageSize.height - 10,
                 { align: 'center' }
             );
         }
 
-        // Save the PDF
         doc.save('medicos-inventory-report.pdf');
     };
+
+    if (loading) return (
+        <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+    );
+
+    if (error) return (
+        <div className="p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
+            <p className="font-bold">Error</p>
+            <p>{error}</p>
+        </div>
+    );
 
     return (
         <div className="container mx-auto bg-white px-4 py-8">

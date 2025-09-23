@@ -101,28 +101,37 @@
 
 // export default SalePage;
 
-
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Header from '../pages/Header'
 import { Link } from 'react-router-dom';
 import { CiSearch } from "react-icons/ci";
+import Header from '../pages/Header';
+import api from '../services/api';
 
 const SalePage = () => {
   const [stock, setStock] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios.get(`http://localhost:4000/InventoryOperations/getstock`)
-        .then(result => {
-            console.log("Fetched Data:", result.data);
-            setStock(result.data);
-        })
-        .catch(err => console.error("Error fetching data:", err));
+    const fetchStock = async () => {
+      try {
+        const response = await api.get('/InventoryOperations/getstock');
+        setStock(response.data);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError(err.response?.data?.message || err.message || "Failed to fetch stock");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStock();
   }, []);
 
   const handleAddToCart = (product) => {
     console.log("Added to cart:", product);
+    // Here you could also update a cart state or localStorage
   };
 
   const handleSearchChange = (event) => {
@@ -131,13 +140,23 @@ const SalePage = () => {
 
   const filteredStock = stock.filter(item => {
     const productName = item.Product ? item.Product.toLowerCase() : '';
-    const category = item.Category ? item.Category.toLowerCase() : '';
+    const category = item.category ? item.category.toLowerCase() : '';
     const searchTerm = searchQuery.toLowerCase();
-    
-    return productName.includes(searchTerm) || 
-           category.includes(searchTerm);
+    return productName.includes(searchTerm) || category.includes(searchTerm);
   });
 
+  if (loading) return (
+    <div className="flex justify-center items-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
+      <p className="font-bold">Error</p>
+      <p>{error}</p>
+    </div>
+  );
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="fixed top-0 left-0 w-full z-50 bg-white shadow-md py-3">

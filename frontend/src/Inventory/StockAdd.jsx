@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 
 const StockAdd = () => {
     const [stock, setStock] = useState({
@@ -58,11 +58,7 @@ const StockAdd = () => {
         }
 
         try {
-            const response = await axios.post('http://localhost:4000/InventoryOperations/Stock', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            const response = await api.post('/InventoryOperations/Stock');
             console.log('Stock added success:', response.data);
             alert("Stock added successfully!");
             navigate('/InventoryPage');

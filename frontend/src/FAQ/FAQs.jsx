@@ -10,27 +10,28 @@ const FAQs = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchFAQs = async () => {
-      try { 
-        if (!user?._id) {
-          throw new Error('User not authenticated');
-        }
+  const fetchFAQs = async () => {
+    try { 
+      const response = await api.get(`/FAQOperations/getfaq/user/${user._id}`, {
+        withCredentials: true
+      });
+      setFaqs(response.data.faqs || []);
+    } catch (err) {
+      console.error("Error fetching FAQs:", err);
+      setError(err.response?.data?.message || "Failed to load FAQs");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        const response = await api.get(`/FAQOperations/getfaq/user/${user._id}`, {
-          withCredentials: true
-        });
-        
-        setFaqs(response.data.faqs || []);
-      } catch (err) {
-        console.error("Error fetching FAQs:", err);
-        setError(err.response?.data?.message || "Failed to load FAQs");
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  // ✅ only run when user is available
+  if (user && user._id) {
     fetchFAQs();
-  }, [user]);
+  } else {
+    setLoading(false); // stop spinner if no user
+    // setError("User not authenticated"); // show message
+  }
+}, [user]);
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this question?")) {

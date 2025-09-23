@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { FaSpinner, FaShoppingBag } from 'react-icons/fa';
+import { AuthContext } from '../context/AuthContext';
+import api from '../services/api';
 
 const Order = () => {
+    const { user } = useContext(AuthContext); // only user
     const navigate = useNavigate();
+
     const [order, setOrder] = useState({
         name: '',
         email: '',
@@ -25,7 +28,7 @@ const Order = () => {
     useEffect(() => {
         const fetchStock = async () => {
             try {
-                const response = await axios.get('http://localhost:4000/InventoryOperations/getstock');
+                const response = await api.get('/InventoryOperations/getstock');
                 setCategories(response.data);
                 setLoading(false);
             } catch (err) {
@@ -34,19 +37,28 @@ const Order = () => {
                 setLoading(false);
             }
         };
-    
+
         fetchStock();
-        
+
         // Set default order date to today
         const today = new Date().toISOString().split('T')[0];
         setOrder(prev => ({ ...prev, orderDate: today }));
-    }, []);
+
+        // Pre-fill user details from AuthContext
+        if (user) {
+            setOrder(prev => ({
+                ...prev,
+                name: user.name || '',
+                email: user.email || '',
+                contactNo: user.contactNo || ''
+            }));
+        }
+    }, [user]);
 
     const handleChange = (event) => {
         const { name, value } = event.target;
         setOrder(prev => ({ ...prev, [name]: value }));
-        
-        // Clear error when user starts typing
+
         if (formErrors[name]) {
             setFormErrors(prev => ({ ...prev, [name]: '' }));
         }
@@ -107,20 +119,15 @@ const Order = () => {
     const handleSubmit = async (event) => {
         event.preventDefault();
         if (!validateForm()) return;
-        
+
         setSubmitLoading(true);
         setError(null);
 
         try {
-            const token = localStorage.getItem('authToken');
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            
-            if (!userData?._id) {
-                throw new Error('User not authenticated');
-            }
+            if (!user?._id) throw new Error('User not authenticated');
 
             const orderData = {
-                userId: userData._id,
+                userId: user._id,
                 name: order.name,
                 email: order.email,
                 contactNo: order.contactNo,
@@ -131,20 +138,11 @@ const Order = () => {
                 remarks: order.remarks
             };
 
-            const response = await axios.post(
-                'http://localhost:4000/OrderOperations/order', 
-                orderData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
+            const response = await api.post('/OrderOperations/order', orderData);
 
             if (response.data.success) {
                 navigate('/Profile', {
-                    state: { 
+                    state: {
                         successMessage: 'Order placed successfully!',
                         orderId: response.data.orderId
                     }
@@ -165,23 +163,6 @@ const Order = () => {
             <div className="flex justify-center items-center h-screen">
                 <FaSpinner className="animate-spin text-4xl text-blue-600 mr-3" />
                 <span>Loading medicine categories...</span>
-            </div>
-        );
-    }
-
-    if (error && !categories.length) {
-        return (
-            <div className="flex flex-col justify-center items-center h-screen p-4">
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-md">
-                    <p className="font-bold">Error</p>
-                    <p>{error}</p>
-                </div>
-                <button
-                    onClick={() => window.location.reload()}
-                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                    Try Again
-                </button>
             </div>
         );
     }

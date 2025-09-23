@@ -1,29 +1,57 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { FaEdit, FaTrash, FaBoxOpen, FaInfoCircle } from 'react-icons/fa';
+import api from '../services/api'; // Use centralized API service
 
 const OrdersTable = () => {
     const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        axios.get(`http://localhost:4000/OrderOperations/getorder`)
-            .then(result => {
-                console.log("Fetched Data:", result.data);
+        const fetchOrders = async () => {
+            try {
+                const result = await api.get('/OrderOperations/getorder');
                 setOrders(result.data);
-            })
-            .catch(err => console.error("Error fetching data:", err));
+            } catch (err) {
+                console.error("Error fetching data:", err);
+                setError(err.response?.data?.message || err.message || "Error fetching orders");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchOrders();
     }, []);
-    
-    const handleDelete = (id) => {
+
+    const handleDelete = async (id) => {
         if (window.confirm("Are you sure you want to delete this order?")) {
-            axios.delete(`http://localhost:4000/OrderOperations/deleteorder/${id}`)
-                .then(() => {
-                    setOrders(orders.filter(order => order._id !== id));
-                })
-                .catch(err => console.error("Error deleting order:", err));
+            try {
+                await api.delete(`/OrderOperations/deleteorder/${id}`);
+                setOrders(prev => prev.filter(order => order._id !== id));
+            } catch (err) {
+                console.error("Error deleting order:", err);
+                setError(err.response?.data?.message || "Error deleting order");
+            }
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <span className="ml-4">Loading orders...</span>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-8 text-red-500">
+                {error}
+            </div>
+        );
+    }
 
     return (
         <div className="p-6">

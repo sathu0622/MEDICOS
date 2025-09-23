@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
-import DOMPurify from 'dompurify'; // Add this for XSS protection
+import api from '../services/api';
 
 const OrderUpdateForm = () => {
     const navigate = useNavigate();
@@ -16,92 +15,93 @@ const OrderUpdateForm = () => {
         qty: '',
         remarks: ''
     });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchOrder = async () => {
             try {
-                // Match the backend route exactly
-                const response = await axios.get(`http://localhost:4000/OrderOperations/getorder/${id}`);
+                const response = await api.get(`/OrderOperations/getorder/${id}`);
                 const orderData = response.data;
-                
+
                 setOrder({
                     name: orderData.name || '',
                     email: orderData.email || '',
-                    contactNo: orderData.contactNo || '', // Changed from Contactno to contactNo
+                    contactNo: orderData.contactNo || '',
                     medicineCategory: orderData.medicineCategory || '',
-                    orderDate: orderData.orderDate ? 
-                        new Date(orderData.orderDate).toISOString().split('T')[0] : '',
+                    orderDate: orderData.orderDate ? new Date(orderData.orderDate).toISOString().split('T')[0] : '',
                     shippingAddress: orderData.shippingAddress || '',
                     qty: orderData.qty || '',
                     remarks: orderData.remarks || ''
                 });
-            } catch (error) {
-                console.error('Error fetching order:', error);
-                alert('Failed to load order data');
-                navigate('/OrdersTable');
+            } catch (err) {
+                console.error('Error fetching order:', err);
+                setError(err.response?.data?.message || err.message || 'Failed to load order data.');
+            } finally {
+                setLoading(false);
             }
         };
+
         fetchOrder();
-    }, [id, navigate]);
+    }, [id]);
 
     const handleChange = (event) => {
-        setOrder({ ...order, [event.target.name]: event.target.value });
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-
-        // Sanitize input to prevent XSS
-        const sanitizedValue = DOMPurify.sanitize(value.trim());
-
-        setOrder(prev => ({
-            ...prev,
-            [name]: sanitizedValue
-        }));
+        const { name, value } = event.target;
+        setOrder(prev => ({ ...prev, [name]: value }));
     };
 
     const validateForm = () => {
-        const errors = {};
-
-        if (!order.name.trim()) errors.name = "Name is required";
-        if (!order.email.trim()) errors.email = "Email is required";
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(order.email)) {
-            errors.email = "Invalid email format";
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(order.email)) {
+            alert("Invalid email address.");
+            return false;
         }
-        if (!/^[0-9]{10}$/.test(order.contactNo)) {
-            errors.contactNo = "Contact number must be 10 digits";
+        const phonePattern = /^\d{10}$/;
+        if (!phonePattern.test(order.contactNo)) {
+            alert("Contact number must be exactly 10 digits.");
+            return false;
         }
-        if (!order.medicineCategory.trim()) errors.medicineCategory = "Medicine category is required";
-        if (!order.shippingAddress.trim()) errors.shippingAddress = "Shipping address is required";
-        if (!order.qty || order.qty < 1) errors.qty = "Quantity must be at least 1";
-
-        return errors;
+        if (!order.qty || isNaN(order.qty) || order.qty <= 0) {
+            alert("Quantity must be greater than zero.");
+            return false;
+        }
+        if (!order.orderDate) {
+            alert("Please select an order date.");
+            return false;
+        }
+        return true;
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        const errors = validateForm();
-        if (Object.keys(errors).length > 0) {
-            alert('Please fix the following errors: ' + Object.values(errors).join(', '));
-            return;
-        }
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        if (!validateForm()) return;
 
         try {
-            const response = await axios.put(
-                `http://localhost:4000/OrderOperations/updateorder/${id}`,
-                order
-            );
-
-            if (response.data.success) {
-                alert('Order updated successfully!');
-                navigate('/OrdersTable');
-            }
-        } catch (error) {
-            console.error('Update failed:', error.response?.data?.message);
-            alert('Failed to update order: ' + (error.response?.data?.message || 'Unknown error'));
+            await api.put(`/OrderOperations/updateorder/${id}`, order);
+            alert("Order updated successfully!");
+            navigate('/OrdersTable');
+        } catch (err) {
+            console.error('Error updating order:', err);
+            alert(err.response?.data?.message || "Error updating order!");
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <span className="ml-4">Loading order...</span>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-8 text-red-500">
+                {error}
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-white flex items-center justify-center p-4">

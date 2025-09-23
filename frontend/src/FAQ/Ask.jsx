@@ -53,7 +53,7 @@ const Ask = () => {
     try {
      
       const faqData = {
-        userId: userData._id,
+        userId: user._id,
         username: faq.username.trim(),
         email: faq.email.trim(),
         faq: faq.faq.trim()

@@ -13,10 +13,11 @@ export const createOrder = async (req, res) => {
     });
   }
 
-  const { name, email, contactNo, medicineCategory, orderDate, shippingAddress, qty, remarks } = req.body;
+  const { userId, name, email, contactNo, medicineCategory, orderDate, shippingAddress, qty, remarks } = req.body;
 
   try {
     const order = new OrderModel({
+      userId,
       name,
       email,
       contactNo,
