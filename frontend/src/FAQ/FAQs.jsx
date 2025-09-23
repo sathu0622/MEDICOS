@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
-
+import { AuthContext } from '../context/AuthContext';
 const FAQs = () => {
+  const { user } = useContext(AuthContext);
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -10,18 +11,14 @@ const FAQs = () => {
 
   useEffect(() => {
     const fetchFAQs = async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        const userData = useMemo(() => {
-          const data = localStorage.getItem('userData');
-          return data ? JSON.parse(data) : null;
-        }, []);
-        
-        if (!userData?._id) {
+      try { 
+        if (!user?._id) {
           throw new Error('User not authenticated');
         }
 
-        const response = await api.get(`/FAQOperations/getfaq/user/${userData._id}`);
+        const response = await api.get(`/FAQOperations/getfaq/user/${user._id}`, {
+          withCredentials: true
+        });
         
         setFaqs(response.data.faqs || []);
       } catch (err) {
@@ -33,7 +30,7 @@ const FAQs = () => {
     };
 
     fetchFAQs();
-  }, []);
+  }, [user]);
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this question?")) {

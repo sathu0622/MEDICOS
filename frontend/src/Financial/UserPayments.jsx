@@ -150,12 +150,14 @@
 
 // export default UserPayments;
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
+import { AuthContext } from '../context/AuthContext';
 
 const UserPayments = () => {
+     const { authToken, user } = useContext(AuthContext); 
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -164,10 +166,8 @@ const UserPayments = () => {
     useEffect(() => {
         const fetchUserPayments = async () => {
             try {
-                const token = localStorage.getItem('authToken');
-                const userData = JSON.parse(localStorage.getItem('userData'));
-                
-                if (!userData?._id) {
+               
+                if (!user?._id) {
                     throw new Error('User not authenticated');
                 }
 
@@ -175,7 +175,7 @@ const UserPayments = () => {
                     `http://localhost:4000/PaymentOperations/getpay/user/${userData._id}`,
                     {
                         headers: {
-                            'Authorization': `Bearer ${token}`
+                            'Authorization': `Bearer ${authToken}`
                         }
                     }
                 );
@@ -190,17 +190,17 @@ const UserPayments = () => {
         };
 
         fetchUserPayments();
-    }, []);
+    }, [authToken, user]);
 
     const handleDelete = async (id) => {
         if (window.confirm("Are you sure you want to delete this payment method?")) {
             try {
-                const token = localStorage.getItem('authToken');
+               
                 await axios.delete(
                     `http://localhost:4000/PaymentOperations/deletePay/${id}`,
                     {
                         headers: {
-                            'Authorization': `Bearer ${token}`
+                            'Authorization': `Bearer ${authToken}`
                         }
                     }
                 );
