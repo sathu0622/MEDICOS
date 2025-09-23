@@ -1,14 +1,20 @@
 import ScheduleModel from "../Models/Schedule.js";
 import UserModel from "../Models/User.js";
 import BookModel from "../Models/Booking.js";
+import { validationResult } from "express-validator";
 
 // Create new slot
 export const createSlot = async (req, res) => {
-  const { userId, doctor, slotDate, start, end, dContact } = req.body;
-
-  if (!userId || !doctor || !slotDate || !start || !end || !dContact) {
-    return res.status(400).json({ message: "All fields are required" });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors: errors.array(),
+    });
   }
+
+  const { userId, doctor, slotDate, start, end, dContact } = req.body;
 
   try {
     const existingSlot = await ScheduleModel.findOne({
@@ -44,13 +50,18 @@ export const createSlot = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error",
-      error: err.message,
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
 
 // Get slots for a specific user
 export const getSlotsByUser = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     const { email } = req.params;
     const user = await UserModel.findOne({ email });
