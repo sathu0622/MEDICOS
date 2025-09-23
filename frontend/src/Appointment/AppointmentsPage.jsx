@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import api from '../services/api';
-import { MdDelete, MdPictureAsPdf, MdEdit, MdPayment, MdFilterList } from 'react-icons/md';
-import { Link, useNavigate } from 'react-router-dom';
-import Header from '../pages/Header';
+import React, { useState, useEffect, useContext } from "react";
+import api from "../services/api";
+import { MdDelete, MdPictureAsPdf, MdEdit, MdPayment, MdFilterList } from "react-icons/md";
+import { Link, useNavigate } from "react-router-dom";
+import Header from "../pages/Header";
 import { jsPDF } from "jspdf";
-import logo from '../logo.jpg';
+import logo from "../logo.jpg";
+import { AuthContext } from "../context/AuthContext";
 
 const AppointmentsPage = () => {
     const [appointments, setAppointments] = useState([]);
@@ -18,77 +19,117 @@ const AppointmentsPage = () => {
     const [showFilters, setShowFilters] = useState(false);
     const navigate = useNavigate();
 
+    const { user, loading: authLoading } = useContext(AuthContext);
+
     useEffect(() => {
-        const fetchAppointments = async () => {
-            try {
-                const token = localStorage.getItem('authToken');
-                const userData = JSON.parse(localStorage.getItem('userData'));
+    const fetchAppointments = async () => {
+      try {
+        if (!user) return;
+
+        const res = await api.get(`/AppointmentOperations/getappointment/user/${user._id}`);
+        setAppointments(res.data.appointments || []);
+      } catch (err) {
+        setError(err.response?.data?.message || err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) fetchAppointments();
+  }, [user]);
+
+    // useEffect(() => {
+    //     const fetchAppointments = async () => {
+    //         try {
+    //             const token = localStorage.getItem('authToken');
+    //             const userData = JSON.parse(localStorage.getItem('userData'));
                 
-                if (!token || !userData) {
-                    throw new Error('Please login to view appointments');
-                }
+    //             if (!token || !userData) {
+    //                 throw new Error('Please login to view appointments');
+    //             }
 
-                const userId = userData.userId || userData._id;
-                if (!userId) throw new Error('User ID not found');
+    //             const userId = userData.userId || userData._id;
+    //             if (!userId) throw new Error('User ID not found');
 
-                const response = await api.get(
-                    `/AppointmentOperations/getappointment/user/${userId}`
-                )
+    //             const response = await api.get(
+    //                 `/AppointmentOperations/getappointment/user/${userId}`
+    //             )
 
-                setAppointments(response.data.appointments || []);
-            } catch (err) {
-                setError(err.response?.data?.message || err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
+    //             setAppointments(response.data.appointments || []);
+    //         } catch (err) {
+    //             setError(err.response?.data?.message || err.message);
+    //         } finally {
+    //             setLoading(false);
+    //         }
+    //     };
 
-        fetchAppointments();
-    }, []);
+    //     fetchAppointments();
+    // }, []);
+
+    // useEffect(() => {
+    //     // Apply filters whenever appointments or filters change
+    //     let filtered = [...appointments];
+        
+    //     if (filters.date) {
+    //         filtered = filtered.filter(appt => appt.date === filters.date);
+    //     }
+        
+    //     if (filters.outcome) {
+    //         filtered = filtered.filter(appt => appt.outcome === filters.outcome);
+    //     }
+        
+    //     setFilteredAppointments(filtered);
+    // }, [appointments, filters]);
+
+    // const handleFilterChange = (e) => {
+    //     const { name, value } = e.target;
+    //     setFilters(prev => ({
+    //         ...prev,
+    //         [name]: value
+    //     }));
+    // };
+
+    // const resetFilters = () => {
+    //     setFilters({
+    //         date: '',
+    //         outcome: ''
+    //     });
+    // };
+
+    // const handleDelete = async (id) => {
+    //     if (!window.confirm('Are you sure you want to delete this appointment?')) return;
+        
+    //     try {
+    //         const token = localStorage.getItem('authToken');
+    //         await api.delete(
+    //             `/AppointmentOperations/deleteappointment/${id}`
+    //         );
+    //         setAppointments(appointments.filter(appt => appt._id !== id));
+    //     } catch (err) {
+    //         alert(err.response?.data?.message || 'Failed to delete appointment');
+    //     }
+    // };
 
     useEffect(() => {
-        // Apply filters whenever appointments or filters change
-        let filtered = [...appointments];
-        
-        if (filters.date) {
-            filtered = filtered.filter(appt => appt.date === filters.date);
-        }
-        
-        if (filters.outcome) {
-            filtered = filtered.filter(appt => appt.outcome === filters.outcome);
-        }
-        
-        setFilteredAppointments(filtered);
-    }, [appointments, filters]);
+    // Filter appointments
+    let filtered = [...appointments];
+    if (filters.date) filtered = filtered.filter(a => a.date === filters.date);
+    if (filters.outcome) filtered = filtered.filter(a => a.outcome === filters.outcome);
+    setFilteredAppointments(filtered);
+  }, [appointments, filters]);
 
-    const handleFilterChange = (e) => {
-        const { name, value } = e.target;
-        setFilters(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
+  const handleFilterChange = e => setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const resetFilters = () => setFilters({ date: "", outcome: "" });
 
-    const resetFilters = () => {
-        setFilters({
-            date: '',
-            outcome: ''
-        });
-    };
-
-    const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this appointment?')) return;
-        
-        try {
-            const token = localStorage.getItem('authToken');
-            await api.delete(
-                `/AppointmentOperations/deleteappointment/${id}`
-            );
-            setAppointments(appointments.filter(appt => appt._id !== id));
-        } catch (err) {
-            alert(err.response?.data?.message || 'Failed to delete appointment');
-        }
-    };
+  const handleDelete = async id => {
+    if (!window.confirm("Are you sure you want to delete this appointment?")) return;
+    try {
+      await api.delete(`/AppointmentOperations/deleteappointment/${id}`);
+      setAppointments(prev => prev.filter(a => a._id !== id));
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete appointment");
+    }
+  };
 
     const generatePDF = (appointment) => {
         const doc = new jsPDF();
@@ -169,7 +210,8 @@ const AppointmentsPage = () => {
         doc.save(`appointment_${appointment._id.slice(-8)}.pdf`);
     };
     
-    if (!localStorage.getItem('authToken')) {
+    // if (!localStorage.getItem('authToken')) {
+    if (authLoading || loading){
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
                 <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-sm text-center">

@@ -46,9 +46,11 @@ import Registration from './Users/Registration';
 import UserTable from './Users/UserTable';
 import UserUpdate from './Users/UserUpdate';
 import Profile from './Users/Profile';
+import { AuthProvider } from './context/AuthContext';
 
 function App() {
   return (
+    <AuthProvider>
     <BrowserRouter>
     
           <Routes>
@@ -102,6 +104,7 @@ function App() {
           </Routes>
       
     </BrowserRouter>
+    </AuthProvider>
   );
 }
 

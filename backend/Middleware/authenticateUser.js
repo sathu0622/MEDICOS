@@ -2,16 +2,33 @@ import jwt from "jsonwebtoken";
 
 // Verify Access Token
 export function authenticateUser(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ message: "No token provided" });
+  let token;
 
-  const token = authHeader.split(" ")[1];
+  // 1. Prefer Authorization header
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+
+  // 2. If no header, try cookies
+  if (!token && req.cookies) {
+    token = req.cookies.accessToken;
+  }
+
+  if (!token) {
+    return res.status(401).json({ message: "No token provided" });
+  }
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.id; // Make sure your JWT payload uses 'id'
+
+    // Attach to req for later use
+    req.userId = decoded.id;
+    req.role = decoded.type; // make sure type is added in token payload
+
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Invalid token" });
+    return res.status(401).json({ message: "Invalid or expired token" });
   }
 }
 
