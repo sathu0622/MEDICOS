@@ -71,11 +71,6 @@ const Payment = () => {
     } else if (!emailRegex.test(payment.email)) {
       newErrors.email = "Invalid email format";
     }
-    if (!payment.Contactno.trim()) {
-      newErrors.Contactno = "Contact number is required";
-    } else if (!phoneRegex.test(payment.Contactno)) {
-      newErrors.Contactno = "Must be 10 digits";
-    }
     if (!payment.BookRef.trim()) newErrors.BookRef = "Booking reference is required";
     if (!payment.payRef.trim()) newErrors.payRef = "Payment reference is required";
     if (!payment.cnum.trim()) {
