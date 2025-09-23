@@ -116,47 +116,50 @@ const Order = () => {
         return isValid;
     };
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        if (!validateForm()) return;
+ const handleSubmit = async (event) => {
+  event.preventDefault();
+  if (!validateForm()) return;
 
-        setSubmitLoading(true);
-        setError(null);
+  if (!user) {
+    setError("You must be logged in to place an order.");
+    return;
+  }
 
-        try {
-            if (!user?._id) throw new Error('User not authenticated');
+  setSubmitLoading(true);
+  setError(null);
 
-            const orderData = {
-                userId: user._id,
-                name: order.name,
-                email: order.email,
-                contactNo: order.contactNo,
-                medicineCategory: order.medicineCategory,
-                orderDate: order.orderDate,
-                shippingAddress: order.shippingAddress,
-                qty: Number(order.qty),
-                remarks: order.remarks
-            };
-
-            const response = await api.post('/OrderOperations/order', orderData);
-
-            if (response.data.success) {
-                navigate('/Profile', {
-                    state: {
-                        successMessage: 'Order placed successfully!',
-                        orderId: response.data.orderId
-                    }
-                });
-            } else {
-                throw new Error(response.data.message || 'Failed to place order');
-            }
-        } catch (err) {
-            console.error('Order submission error:', err);
-            setError(err.response?.data?.message || err.message || "Error placing order!");
-        } finally {
-            setSubmitLoading(false);
-        }
+  try {
+    const orderData = {
+      userId: user._id,
+      name: order.name,
+      email: order.email,
+      contactNo: order.contactNo,
+      medicineCategory: order.medicineCategory,
+      orderDate: order.orderDate,
+      shippingAddress: order.shippingAddress,
+      qty: Number(order.qty),
+      remarks: order.remarks
     };
+
+    const response = await api.post('/OrderOperations/order', orderData);
+
+    if (response.data.success) {
+      navigate('/Profile', {
+        state: {
+          successMessage: 'Order placed successfully!',
+          orderId: response.data.orderId
+        }
+      });
+    } else {
+      throw new Error(response.data.message || 'Failed to place order');
+    }
+  } catch (err) {
+    console.error('Order submission error:', err);
+    setError(err.response?.data?.message || err.message || "Error placing order!");
+  } finally {
+    setSubmitLoading(false);
+  }
+};
 
     if (loading) {
         return (

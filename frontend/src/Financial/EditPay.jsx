@@ -1,118 +1,93 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
-import { AuthContext } from "../context/AuthContext";
+import api from "../services/api"; // ✅ use your api instance
 
 const EditPay = () => {
-    const { id } = useParams(); 
-    const navigate = useNavigate();
-    const [errors, setErrors] = useState({});
-    const [isSubmitting, setIsSubmitting] = useState(false);
-const { user, token } = useContext(AuthContext);
-    const [payment, setPayment] = useState({
-        Repname: '',
-        email: '',
-        Contactno: '',
-        BookRef: '',
-        payRef: '',
-        cnum: '',
-        type: '',
-        cmonth: '',
-        cyear: '',
-        cvv: ''
-    });
+  const { id } = useParams(); 
+  const navigate = useNavigate();
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [payment, setPayment] = useState({
+    Repname: '',
+    email: '',
+    Contactno: '',
+    BookRef: '',
+    payRef: '',
+    cnum: '',
+    type: '',
+    cmonth: '',
+    cyear: '',
+    cvv: ''
+  });
 
-    useEffect(() => {
-         if (!token) {
-      alert("User not authenticated");
-      navigate("/login");
-      return;
+  useEffect(() => {
+    const fetchPayment = async () => {
+      try {
+        const response = await api.get(`/PaymentOperations/getpay/${id}`);
+        setPayment(response.data);
+      } catch (err) {
+        console.error("Error fetching payment:", err);
+        alert("Failed to load payment details");
+        navigate("/UserPayments");
+      }
+    };
+
+    fetchPayment();
+  }, [id, navigate]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[0-9]{10}$/;
+
+    if (!payment.Repname.trim()) newErrors.Repname = "Representative name is required";
+    if (!payment.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!emailRegex.test(payment.email)) {
+      newErrors.email = "Invalid email format";
     }
+    if (!payment.Contactno.trim()) {
+      newErrors.Contactno = "Contact number is required";
+    } else if (!phoneRegex.test(payment.Contactno)) {
+      newErrors.Contactno = "Invalid phone number (10 digits required)";
+    }
+    if (!payment.BookRef.trim()) newErrors.BookRef = "Booking reference is required";
+    if (!payment.payRef.trim()) newErrors.payRef = "Payment reference is required";
 
-        const fetchPayment = async () => {
-            try {
-                const response = await axios.get(
-                    `http://localhost:4000/PaymentOperations/getpay/${id}`,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                        },
-                    }
-                );
-                setPayment(response.data);
-            } catch (err) {
-                console.error('Error fetching payment:', err);
-                alert('Failed to load payment details');
-                navigate('/UserPayments');
-            }
-        };
-        fetchPayment();
-    }, [id, navigate, token]);
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    const validateForm = () => {
-        const newErrors = {};
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const phoneRegex = /^[0-9]{10}$/;
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setPayment((prev) => ({ ...prev, [name]: value }));
 
-        if (!payment.Repname.trim()) newErrors.Repname = 'Representative name is required';
-        if (!payment.email.trim()) {
-            newErrors.email = 'Email is required';
-        } else if (!emailRegex.test(payment.email)) {
-            newErrors.email = 'Invalid email format';
-        }
-        if (!payment.Contactno.trim()) {
-            newErrors.Contactno = 'Contact number is required';
-        } else if (!phoneRegex.test(payment.Contactno)) {
-            newErrors.Contactno = 'Invalid phone number (10 digits required)';
-        }
-        if (!payment.BookRef.trim()) newErrors.BookRef = 'Booking reference is required';
-        if (!payment.payRef.trim()) newErrors.payRef = 'Payment reference is required';
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
 
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
-    const handleChange = (event) => {
-        const { name, value } = event.target;
-        setPayment(prev => ({ ...prev, [name]: value }));
-        
-        // Clear error when user starts typing
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
-        }
-    };
+    setIsSubmitting(true);
+    try {
+      await api.put(`/PaymentOperations/updatepay/${id}`, {
+        ...payment,
+        cvv: undefined,
+        cnum: payment.cnum.slice(-4), // only keep last 4 digits
+      });
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!validateForm()) return;
-        
-        setIsSubmitting(true);
-        try {
-            await axios.put(
-                `http://localhost:4000/PaymentOperations/updatepay/${id}`,
-                {
-                    ...payment,
-                  
-                    cvv: undefined,
-                    cnum: payment.cnum.slice(-4) 
-                },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-            alert("Payment details updated successfully!");
-            navigate('/UserPayments');
-        } catch (err) {
-            console.error("Update error:", err);
-            alert(err.response?.data?.message || "Failed to update payment details");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
+      alert("Payment details updated successfully!");
+      navigate("/UserPayments");
+    } catch (err) {
+      console.error("Update error:", err);
+      alert(err.response?.data?.message || "Failed to update payment details");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
     return (
         <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl p-6 md:p-8">
