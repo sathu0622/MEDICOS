@@ -15,18 +15,24 @@ export const AuthProvider = ({ children }) => {
     return;
   }
     const fetchUser = async () => {
-      try {
-        const res = await api.get("/UserOperations/getUser");
-        setUser(res.data.data); // user object from backend
-      } catch (err) {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+    try {
+      const res = await api.get("/UserOperations/getUser"); // cookies sent automatically
+      setUser(res.data.data);
+    } catch (err) {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Fetch user if coming from Google login
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("googleLogin") === "success") {
     fetchUser();
-  }, []);
+  } else {
+    fetchUser();
+  }
+}, []);
 
   // Login
   const login = async (email, password) => {

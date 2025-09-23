@@ -1,18 +1,22 @@
-import { useEffect } from "react";
+import { useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user, loading } = useContext(AuthContext);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-
-    if (token) {
-      localStorage.setItem("authToken", token);
-      navigate("/Userhome"); // or /AdminDashboard depending on role
+    if (!loading) {
+      if (!user) {
+        navigate("/login"); // not logged in
+      } else if (user.type === "admin") {
+        navigate("/AdminDashboard");
+      } else {
+        navigate("/Userhome");
+      }
     }
-  }, [navigate]);
+  }, [user, loading, navigate]);
 
   return <h1>Loading...</h1>;
 };

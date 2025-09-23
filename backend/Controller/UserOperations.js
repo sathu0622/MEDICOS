@@ -18,19 +18,21 @@ const generateRefreshToken = (user) => {
 };
 
 const setAuthCookies = (res, accessToken, refreshToken) => {
-  res.cookie("accessToken", accessToken, {
-  httpOnly: true,
-  secure: false, // local dev over HTTP
-  sameSite: "none", // must be "none" for cross-origin requests
-  maxAge: 15 * 60 * 1000,
-});
+ const isProd = process.env.NODE_ENV === "production";
 
-res.cookie("refreshToken", refreshToken, {
-  httpOnly: true,
-  secure: false,
-  sameSite: "none",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-});
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: isProd, // only secure in production
+    sameSite: isProd ? "none" : "lax", // lax for local dev
+    maxAge: 15 * 60 * 1000,
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 
   // res.cookie("accessToken", accessToken, {
   //   httpOnly: true,
@@ -283,7 +285,10 @@ router.get(
       setAuthCookies(res, accessToken, refreshToken);
 
       // Redirect frontend without exposing tokens
-      res.redirect("http://localhost:5173/dashboard");
+      // res.redirect("http://localhost:5173/Userhome");
+      // google/callback
+res.redirect("http://localhost:5173/Userhome?googleLogin=success");
+
     } catch (err) {
       res.redirect("http://localhost:5173/login?error=auth_failed");
     }
