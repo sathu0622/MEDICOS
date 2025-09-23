@@ -3,9 +3,6 @@ import cors from 'cors';
 import OrderModel from "../Models/Order.js";
 
 const router = express.Router();
-router.use(cors());
-
-
 
 
 // Create new order

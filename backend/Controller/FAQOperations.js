@@ -2,8 +2,6 @@ import express from "express";
 import cors from 'cors';
 import FAQModel from "../Models/FAQ.js";
 const router = express.Router();
-router.use(cors());
-
 router.post("/ask", async (req, res) => {
     const { userId, username, email, faq } = req.body;
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 import { MdPictureAsPdf } from 'react-icons/md';
 import { Link, useNavigate } from 'react-router-dom';
@@ -28,7 +28,7 @@ const DoctorBookings = () => {
 
                 // Get all slots for this doctor
                 const slotsResponse = await api.get(
-                    `/ScheduleOperations/getslot/user/${userData.email}`
+                    `/ScheduleOperations/getslot/user/${user.email}`
                 );
 
                 const slotIds = slotsResponse.data.slots.map(slot => slot._id);

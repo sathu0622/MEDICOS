@@ -2,9 +2,6 @@ import express from "express";
 import cors from 'cors';
 import PaymentModel from "../Models/Payment.js";
 const router = express.Router();
-router.use(cors());
-
-
 
 router.post("/Pay", async (req, res) => {
     const { userId, Repname, email, Contactno, BookRef, payRef, cnum, type, cmonth, cyear, cvv } = req.body;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import DoctorProfile from '../assets/DoctorProfile.png';
@@ -16,36 +16,30 @@ const Slots = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
+useEffect(() => {
+  const fetchSlots = async () => {
+    try {
+      const response = await api.get(`/ScheduleOperations/getslot/user/${user.email}`);
+      if (Array.isArray(response.data.slots)) {
+        setSlots(response.data.slots);
+      } else {
+        setSlots([]);
+        toast.warn("No slots found or unexpected server response.");
+      }
+    } catch (err) {
+      console.error("Error fetching slots:", err);
+      setError(err.response?.data?.message || err.message || "Error fetching slots");
+      toast.error("Failed to load slots");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        const fetchSlots = async () => {
-            try {
-                if (!user?.email) {
-                    throw new Error('User not authenticated');
-                }
+  if (user && user.email) {
+    fetchSlots();
+  }
+}, [user]);
 
-                const response = await api.get(
-                    `/ScheduleOperations/getslot/user/${user.email}`
-                );
-
-                if (Array.isArray(response.data.slots)) {
-                    setSlots(response.data.slots);
-                } else {
-                    setSlots([]);
-                    toast.warn("No slots found or unexpected server response.");
-                }
-
-            } catch (err) {
-                console.error("Error fetching slots:", err);
-                setError(err.response?.data?.message || err.message || "Error fetching slots");
-                toast.error("Failed to load slots");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchSlots();
-    }, [user]);
 
     const handleDelete = (id) => {
         confirmAlert({
