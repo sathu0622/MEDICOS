@@ -11,10 +11,42 @@ const router = express.Router();
 
 // Generate Tokens
 const generateAccessToken = (user) => {
-  return jwt.sign({ userId: user._id, role: user.type }, process.env.JWT_SECRET, { expiresIn: "15m" });
+  return jwt.sign({ id: user._id, type: user.type }, process.env.JWT_SECRET, { expiresIn: "15m" });
 };
 const generateRefreshToken = (user) => {
-  return jwt.sign({ userId: user._id, role: user.type }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
+  return jwt.sign({ id: user._id, type: user.type }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
+};
+
+const setAuthCookies = (res, accessToken, refreshToken) => {
+ const isProd = process.env.NODE_ENV === "production";
+
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: isProd, // only secure in production
+    sameSite: isProd ? "none" : "lax", // lax for local dev
+    maxAge: 15 * 60 * 1000,
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  // res.cookie("accessToken", accessToken, {
+  //   httpOnly: true,
+  //   secure: process.env.NODE_ENV === "production",
+  //   sameSite: "lax",
+  //   maxAge: 15 * 60 * 1000, // 15 min
+  // });
+
+  // res.cookie("refreshToken", refreshToken, {
+  //   httpOnly: true,
+  //   secure: process.env.NODE_ENV === "production",
+  //   sameSite: "lax",
+  //   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  // });
 };
 
 // REGISTER
@@ -61,52 +93,28 @@ router.post(
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
-    }
+    if (!email || !password) return res.status(400).json({ message: "Email and password are required" });
 
     const user = await UserModel.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
+    if (!user) return res.status(401).json({ message: "Invalid email or password" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
+    if (!isMatch) return res.status(401).json({ message: "Invalid email or password" });
 
-    if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET not defined in .env");
-    }
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    const token = jwt.sign(
-      { id: user._id, type: user.type }, // include type for convenience
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    user.refreshToken = refreshToken;
+    await user.save();
 
-    // Optional: send as HttpOnly cookie
-    res.cookie("accessToken", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 1000, // 1 hour
-    });
+    setAuthCookies(res, accessToken, refreshToken);
 
-    res.status(200).json({
+    res.json({
       message: "Login successful",
-      accessToken: token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        type: user.type,
-      },
+      user: { id: user._id, name: user.name, email: user.email, type: user.type }
     });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+  } catch (err) {
+    res.status(500).json({ message: "Login error", error: err.message });
   }
 });
 
@@ -123,26 +131,24 @@ router.get("/getUser", authenticateUser, async (req, res) => {
   }
 });
 
-
-
-// REFRESH TOKEN
 router.post("/refresh", async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) return res.status(401).json({ message: "Refresh token missing" });
 
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const user = await UserModel.findById(decoded.userId);
+    const user = await UserModel.findById(decoded.id);
     if (!user || user.refreshToken !== refreshToken) {
       return res.status(403).json({ message: "Invalid refresh token" });
     }
 
     const newAccessToken = generateAccessToken(user);
-    res.json({ accessToken: newAccessToken });
+    setAuthCookies(res, newAccessToken, refreshToken);
+
+    res.json({ message: "Token refreshed" });
   } catch (err) {
     return res.status(403).json({ message: "Invalid or expired refresh token" });
-  }
-});
+  }});
 
 // LOGOUT
 router.post("/logout", authenticateUser, async (req, res) => {
@@ -152,6 +158,8 @@ router.post("/logout", authenticateUser, async (req, res) => {
       user.refreshToken = null;
       await user.save();
     }
+
+    res.clearCookie("accessToken");
     res.clearCookie("refreshToken");
     res.json({ message: "Logged out successfully" });
   } catch (err) {
@@ -244,18 +252,47 @@ router.put(
 );
 
 
-// Start Google OAuth flow
+// // Start Google OAuth flow
+// router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+
+// // Callback URL after Google Auth
+// router.get(
+//   "/google/callback",
+//   passport.authenticate("google", { failureRedirect: "http://localhost:5173/login" }),
+//   (req, res) => {
+//     const token = jwt.sign({ userId: req.user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+//     res.redirect(`http://localhost:5173/dashboard?token=${token}`);
+//   }
+// );
+
+
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
-// Callback URL after Google Auth
+// GOOGLE OAUTH CALLBACK
 router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "http://localhost:5173/login" }),
-  (req, res) => {
-    const token = jwt.sign({ userId: req.user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-    res.redirect(`http://localhost:5173/dashboard?token=${token}`);
+  async (req, res) => {
+    try {
+      const user = req.user;
+
+      const accessToken = generateAccessToken(user);
+      const refreshToken = generateRefreshToken(user);
+
+      user.refreshToken = refreshToken;
+      await user.save();
+
+      setAuthCookies(res, accessToken, refreshToken);
+
+      // Redirect frontend without exposing tokens
+      // res.redirect("http://localhost:5173/Userhome");
+      // google/callback
+res.redirect("http://localhost:5173/Userhome?googleLogin=success");
+
+    } catch (err) {
+      res.redirect("http://localhost:5173/login?error=auth_failed");
+    }
   }
 );
-
 
 export default router;

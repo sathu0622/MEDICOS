@@ -1,64 +1,31 @@
-// src/services/api.js
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = 'http://localhost:4000';
-
-// Create axios instance
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true,
+  baseURL: "http://localhost:4000", // adjust to your backend
+  withCredentials: true, // send cookies automatically
 });
 
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = sessionStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor to handle token refresh
+// Response interceptor: auto-refresh on 401
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
-    // If error is 401 and we haven't tried refreshing yet
+
+    // If token expired (401) and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
+
       try {
-        // Try to refresh the token
-        const response = await axios.post(
-          `${API_BASE_URL}/UserOperations/refresh`,
-          {},
-          { withCredentials: true }
-        );
-        
-        const { accessToken } = response.data;
-        
-        // Store the new token
-        sessionStorage.setItem('accessToken', accessToken);
-        
-        // Retry the original request with the new token
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        // Try refreshing
+        await api.post("/UserOperations/refresh");
+        // Retry original request
         return api(originalRequest);
-      } catch (refreshError) {
-        // Refresh failed - redirect to login
-        sessionStorage.removeItem('accessToken');
-        localStorage.removeItem('userData');
-        localStorage.removeItem('userType');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
+      } catch (err) {
+        console.error("Refresh token expired or invalid", err);
+        window.location.href = "/login"; // redirect to login
       }
     }
-    
+
     return Promise.reject(error);
   }
 );

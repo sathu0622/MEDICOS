@@ -6,9 +6,6 @@ import cors from 'cors';
 const router = express.Router();
 
 
-//router.use(cors());
-
-
 router.post("/Appointment", async (req, res) => {
     console.log("Incoming appointment:", req.body);
     const { userId, slotId, repname, contact, reason, address, company, outcome, date, atime } = req.body;

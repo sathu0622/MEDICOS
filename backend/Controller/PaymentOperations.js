@@ -3,9 +3,6 @@ import cors from 'cors';
 import PaymentModel from "../Models/Payment.js";
 import { body, validationResult } from "express-validator";
 const router = express.Router();
-//router.use(cors());
-
-
 
 router.post(
     "/pay",
@@ -30,7 +27,7 @@ router.post(
         const { userId, Repname, email, Contactno, BookRef, payRef, cnum, type, cmonth, cyear } = req.body;
 
 
-      if (!userId || !Repname || !email || !Contactno || !BookRef || !payRef || !cnum || !type || !cmonth || !cyear) {
+        if (!userId || !Repname || !email || !Contactno || !BookRef || !payRef || !cnum || !type || !cmonth || !cyear) {
         return res.status(400).json({ 
             success: false,
             message: "Missing required fields" 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import DoctorProfile from '../assets/DoctorProfile.png';
@@ -8,45 +8,38 @@ import { confirmAlert } from 'react-confirm-alert';
 import 'react-confirm-alert/src/react-confirm-alert.css';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { AuthContext } from '../context/AuthContext'; 
 
 const Slots = () => {
     const [slots, setSlots] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const { user } = useContext(AuthContext);
+useEffect(() => {
+  const fetchSlots = async () => {
+    try {
+      const response = await api.get(`/ScheduleOperations/getslot/user/${user.email}`);
+      if (Array.isArray(response.data.slots)) {
+        setSlots(response.data.slots);
+      } else {
+        setSlots([]);
+        toast.warn("No slots found or unexpected server response.");
+      }
+    } catch (err) {
+      console.error("Error fetching slots:", err);
+      setError(err.response?.data?.message || err.message || "Error fetching slots");
+      toast.error("Failed to load slots");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        const fetchSlots = async () => {
-            try {
-                const token = localStorage.getItem('authToken');
-                const userData = JSON.parse(localStorage.getItem('userData'));
+  if (user && user.email) {
+    fetchSlots();
+  }
+}, [user]);
 
-                if (!userData?.email) {
-                    throw new Error('User not authenticated');
-                }
-
-                const response = await api.get(
-                    `/ScheduleOperations/getslot/user/${userData.email}`
-                );
-
-                if (Array.isArray(response.data.slots)) {
-                    setSlots(response.data.slots);
-                } else {
-                    setSlots([]);
-                    toast.warn("No slots found or unexpected server response.");
-                }
-
-            } catch (err) {
-                console.error("Error fetching slots:", err);
-                setError(err.response?.data?.message || err.message || "Error fetching slots");
-                toast.error("Failed to load slots");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchSlots();
-    }, []);
 
     const handleDelete = (id) => {
         confirmAlert({
@@ -57,7 +50,7 @@ const Slots = () => {
                     label: 'Yes',
                     onClick: async () => {
                         try {
-                            const token = localStorage.getItem('authToken');
+                        
                             await api.delete(
                                 `/ScheduleOperations/deleteslot/${id}`
                             );

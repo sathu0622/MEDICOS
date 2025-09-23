@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState , useContext} from "react";
 import { useNavigate } from "react-router-dom";
 import api from '../services/api';
 import Header from '../pages/Header';
+import { AuthContext } from '../context/AuthContext';
 
 const Ask = () => {
+  const { user } = useContext(AuthContext);
   const [faq, setFaq] = useState({
     username: "",
     email: "",
@@ -40,20 +42,16 @@ const Ask = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
   
-    if (!validateForm()) {
+    if (!validateForm()) return;
+    if (!user?._id) {
+      setErrors({ form: "User not authenticated" });
       return;
     }
   
     setSubmitLoading(true);
   
     try {
-      const token = localStorage.getItem('authToken');
-      const userData = JSON.parse(localStorage.getItem('userData'));
-  
-      if (!userData?._id) {
-        throw new Error('User not authenticated');
-      }
-  
+     
       const faqData = {
         userId: userData._id,
         username: faq.username.trim(),
@@ -62,7 +60,7 @@ const Ask = () => {
       };
   
       const response = await api.post('/FAQOperations/ask', faqData, {
-        headers: { Authorization: `Bearer ${token}` }
+        withCredentials: true
       });
 
   

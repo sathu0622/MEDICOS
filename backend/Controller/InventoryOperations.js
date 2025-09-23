@@ -5,7 +5,6 @@ import path from 'path';
 import { body, validationResult } from "express-validator";
 
 const router = express.Router();
-//router.use(cors());
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
