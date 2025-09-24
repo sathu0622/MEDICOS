@@ -2,20 +2,58 @@ import PaymentModel from "../Models/Payment.js";
 import { validationResult } from "express-validator";
 import mongoose from "mongoose";
 
+// Security function to whitelist fields and block dangerous keys
+const sanitizeAndWhitelist = (body, allowedFields) => {
+  const sanitized = {};
+
+  // Loop through allowed fields only (whitelist approach)
+  allowedFields.forEach((field) => {
+    if (body.hasOwnProperty(field)) {
+      const value = body[field];
+
+      // Block dangerous keys starting with $ (MongoDB operators)
+      if (typeof value === "string" && (value.startsWith("$") || value.startsWith("__"))) {
+        console.warn(`Blocked dangerous value for field ${field}: ${value}`);
+        return; // Skip this field
+      }
+
+      // Block object values that contain dangerous keys
+      if (typeof value === "object" && value !== null) {
+        const hassDangerousKeys = Object.keys(value).some((key) => key.startsWith("$") || key.startsWith("__"));
+        if (hassDangerousKeys) {
+          console.warn(`Blocked object with dangerous keys for field ${field}:`, value);
+          return; // Skip this field
+        }
+      }
+
+      sanitized[field] = value;
+    }
+  });
+
+  return sanitized;
+};
+
 // Create new payment
 export const createPayment = async (req, res) => {
+  // Define allowed fields (whitelist)
+  const allowedFields = ["userId", "Repname", "email", "Contactno", "BookRef", "payRef", "cnum", "type", "cmonth", "cyear"];
+
+  // Apply whitelisting and dangerous key blocking
+  const sanitizedBody = sanitizeAndWhitelist(req.body, allowedFields);
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
       message: "Validation failed",
-      errors: errors.array()
+      errors: errors.array(),
     });
   }
 
-  const { userId, Repname, email, Contactno, BookRef, payRef, cnum, type, cmonth, cyear } = req.body;
+  const { userId, Repname, email, Contactno, BookRef, payRef, cnum, type, cmonth, cyear } = sanitizedBody;
 
   try {
+    // Use sanitized data for model creation
     const payment = new PaymentModel({
       userId,
       Repname,
@@ -31,7 +69,6 @@ export const createPayment = async (req, res) => {
     });
 
     await payment.save();
-
     res.status(201).json({
       success: true,
       message: "Payment processed successfully!",

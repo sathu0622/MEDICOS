@@ -2,8 +2,53 @@ import OrderModel from "../Models/Order.js";
 import { validationResult } from "express-validator";
 import mongoose from "mongoose";
 
+// Security middleware function for orders
+const sanitizeOrderInput = (body) => {
+  // Whitelist of allowed fields for orders
+  const allowedFields = [
+    'name', 'email', 'contactNo', 'orderDate',
+    'shippingAddress', 'qty', 'remarks'
+  ];
+
+  const sanitized = {};
+
+  allowedFields.forEach(field => {
+    if (body.hasOwnProperty(field)) {
+      const value = body[field];
+
+      // Block dangerous MongoDB operators and keys
+      if (typeof value === 'string') {
+        // Block values starting with $ (MongoDB operators like $ne, $gt, etc.)
+        if (value.startsWith('$')) {
+          console.warn(`Blocked dangerous MongoDB operator in ${field}: ${value}`);
+          return;
+        }
+      }
+
+      // Block dangerous object keys
+      if (typeof value === 'object' && value !== null) {
+        const dangerousKeys = Object.keys(value).filter(key =>
+          key.startsWith('$') || key.startsWith('__proto__') || key.startsWith('constructor')
+        );
+
+        if (dangerousKeys.length > 0) {
+          console.warn(`Blocked object with dangerous keys in ${field}:`, dangerousKeys);
+          return;
+        }
+      }
+
+      sanitized[field] = value;
+    }
+  });
+
+  return sanitized;
+};
+
 // Create order
 export const createOrder = async (req, res) => {
+  // Apply security sanitization and whitelisting
+  const sanitizedBody = sanitizeOrderInput(req.body);
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
@@ -13,15 +58,14 @@ export const createOrder = async (req, res) => {
     });
   }
 
-  const { userId, name, email, contactNo, medicineCategory, orderDate, shippingAddress, qty, remarks } = req.body;
+  const { name, email, contactNo, orderDate, shippingAddress, qty, remarks } = sanitizedBody;
 
   try {
+    // Create order with sanitized data
     const order = new OrderModel({
-      userId,
       name,
       email,
       contactNo,
-      medicineCategory,
       orderDate: new Date(orderDate),
       shippingAddress,
       qty: parseInt(qty),
@@ -31,8 +75,8 @@ export const createOrder = async (req, res) => {
     await order.save();
     res.status(201).json({
       success: true,
-      message: "Order created successfully!",
-      orderId: order._id
+      message: "Order placed successfully!",
+      orderId: order._id,
     });
   } catch (err) {
     console.error("Order creation error:", err);
