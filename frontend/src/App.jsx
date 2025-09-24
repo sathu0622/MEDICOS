@@ -263,11 +263,7 @@ function App() {
 
           {/* Orders */}
           <Route path="/Order" element={<ProtectedRoute><Order /></ProtectedRoute>} />
-          <Route path="/OrderList" element={
-            <RoleBasedRoute allowedRoles={["admin"]}>
-              <OrderList />
-            </RoleBasedRoute>
-          } />
+          <Route path="/OrderList" element={<OrderList />} />
           <Route path="/OrderUpdateForm/:id" element={
             <RoleBasedRoute allowedRoles={["admin"]}>
               <OrderUpdateForm />

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { FaCreditCard, FaUser, FaEnvelope, FaPhone, FaFileAlt, FaLock } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
+import api from "../services/api"; // Use the configured api instance instead of axios
 
 const Payment = () => {
-   const { user, token } = useContext(AuthContext); 
+  const { user } = useContext(AuthContext); // Remove token since you're using cookie auth
   const [payment, setPayment] = useState({
     Repname: "",
     email: "",
@@ -23,7 +23,6 @@ const Payment = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-   
     if (user) {
       setPayment((prev) => ({
         ...prev,
@@ -93,18 +92,19 @@ const Payment = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-  
+
     if (!validateForm()) return;
-     if (!user?._id) {
+
+    if (!user?._id) {
       setErrors({ form: "User not authenticated" });
+      navigate('/login');
       return;
     }
-  
+
     setSubmitLoading(true);
     setErrors({});
-  
+
     try {
-    
       const paymentData = {
         userId: user._id,
         Repname: payment.Repname.trim(),
@@ -112,24 +112,17 @@ const Payment = () => {
         Contactno: payment.Contactno.trim(),
         BookRef: payment.BookRef.trim(),
         payRef: payment.payRef.trim(),
-        cnum: payment.cnum.slice(-4), // Only last 4 digits
+        cnum: payment.cnum.replace(/\s/g, '').slice(-4), // Remove spaces and get last 4 digits
         type: payment.type,
-        cmonth: payment.cmonth,
-        cyear: payment.cyear,
+        cmonth: parseInt(payment.cmonth),
+        cyear: parseInt(payment.cyear),
         // Do NOT send CVV for storage
       };
-  
-      const response = await axios.post(
-        'http://localhost:4000/PaymentOperations/pay',
-        paymentData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-  
+
+
+      // Use api instead of axios - this will automatically include authentication cookies
+      const response = await api.post('/PaymentOperations/pay', paymentData);
+
       if (response.data && response.data.success) {
         navigate('/Profile', {
           state: { 
@@ -141,7 +134,26 @@ const Payment = () => {
         throw new Error(response.data?.message || 'Payment failed');
       }
     } catch (err) {
-      setErrors({ form: err.response?.data?.message || err.message || "Error processing payment" });
+      console.error('Payment error:', err);
+
+      // Handle specific error cases
+      if (err.response?.status === 400) {
+        // Handle validation errors
+        if (err.response.data?.errors) {
+          const validationErrors = {};
+          err.response.data.errors.forEach(error => {
+            validationErrors[error.path || error.param] = error.msg;
+          });
+          setErrors(validationErrors);
+        } else {
+          setErrors({ form: err.response.data?.message || "Validation failed. Please check your input." });
+        }
+      } else if (err.response?.status === 401) {
+        setErrors({ form: "Session expired. Please login again." });
+        navigate('/login');
+      } else {
+        setErrors({ form: err.response?.data?.message || err.message || "Error processing payment" });
+      }
     } finally {
       setSubmitLoading(false);
     }
