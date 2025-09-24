@@ -72,7 +72,7 @@ const UserPayments = () => {
     doc.text(`Booking Ref: ${payment.BookRef || "N/A"}`, 110, y);
     y += 6;
     doc.text(`Payment Method: ${payment.type || "N/A"}`, 30, y);
-    doc.text(`Card: **** **** **** ${payment.cnum?.slice(-4) || "****"}`, 110, y);
+    doc.text(`Card: **** **** **** ${payment.cnum?.slice(-4) || "****"}`, 110, y); //**** **** **** 1234
     y += 6;
     doc.text(`Expiry: ${payment.cmonth || "MM"}/${payment.cyear || "YY"}`, 30, y);
 
@@ -118,7 +118,7 @@ const UserPayments = () => {
               <th className="py-3 px-4 text-left">CVV</th>
               <th className="py-3 px-4 text-center">Actions</th>
             </tr>
-          </thead>
+          </thead> 
           <tbody>
             {payments.length > 0 ? (
               payments.map((pay) => (

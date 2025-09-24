@@ -15,6 +15,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import csurf from "csurf";
+import { sanitizeInput } from './middleware/sanitizeInput.js';
 
 
 dotenv.config();
@@ -115,6 +116,22 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
 }));
+
+// Apply global input sanitization (blocks dangerous keys)
+app.use(sanitizeInput());
+
+// Apply to specific routes with field whitelisting
+app.use('/PaymentOperations', sanitizeInput([
+  'userId', 'Repname', 'email', 'Contactno', 'BookRef', 'payRef', 'cnum', 'type', 'cmonth', 'cyear'
+]), PaymentOperations);
+
+app.use('/OrderOperations', sanitizeInput([
+  'name', 'email', 'contactNo', 'orderDate', 'shippingAddress', 'qty', 'remarks'
+]), OrderOperations);
+
+app.use('/UserOperations', sanitizeInput([
+  'name', 'email', 'mobile', 'gender', 'type', 'password'
+]), UserOperations);
 
 app.use("/UserOperations", UserOperations);
 app.use("/AppointmentOperations", AppointmentOperations);

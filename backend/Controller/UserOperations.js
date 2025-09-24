@@ -26,7 +26,7 @@ const generateRefreshToken = (user) => {
 };
 
 const setAuthCookies = (res, accessToken, refreshToken) => {
- const isProd = process.env.NODE_ENV === "production";
+  const isProd = process.env.NODE_ENV === "production";
 
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
@@ -55,6 +55,101 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
   //   sameSite: "lax",
   //   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   // });
+};
+
+// Security function for user registration/login
+const sanitizeUserInput = (body, operation = 'register') => {
+  // Different whitelists for different operations
+  const allowedFields = {
+    register: ['name', 'email', 'mobile', 'gender', 'type', 'password'],
+    login: ['email', 'password'],
+    update: ['name', 'mobile', 'gender']
+  };
+
+  const fields = allowedFields[operation] || allowedFields.register;
+  const sanitized = {};
+
+  fields.forEach(field => {
+    if (body.hasOwnProperty(field)) {
+      const value = body[field];
+
+      // Block MongoDB injection operators
+      if (typeof value === 'string' && value.match(/^\$\w+/)) {
+        console.warn(`Blocked MongoDB operator in ${field}: ${value}`);
+        return;
+      }
+
+      // Block dangerous object structures
+      if (typeof value === 'object' && value !== null) {
+        // Check for prototype pollution attempts
+        const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
+        const hasDangerousKeys = Object.keys(value).some(key =>
+          dangerousKeys.includes(key) || key.startsWith('$')
+        );
+
+        if (hasDangerousKeys) {
+          console.warn(`Blocked dangerous object structure in ${field}:`, Object.keys(value));
+          return;
+        }
+      }
+
+      sanitized[field] = value;
+    }
+  });
+
+  return sanitized;
+};
+
+export const userRegister = async (req, res) => {
+  // Apply security sanitization for registration
+  const sanitizedBody = sanitizeUserInput(req.body, 'register');
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors: errors.array()
+    });
+  }
+
+  const { name, email, mobile, gender, type, password } = sanitizedBody;
+
+  try {
+    // Check if user already exists using sanitized email
+    const existingUser = await UserModel.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists with this email"
+      });
+    }
+
+    // Create user with sanitized data
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const user = new UserModel({
+      name,
+      email,
+      mobile,
+      gender,
+      type,
+      password: hashedPassword,
+    });
+
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully!",
+      userId: user._id,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Error registering user",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined
+    });
+  }
 };
 
 // REGISTER
@@ -156,7 +251,8 @@ router.post("/refresh", async (req, res) => {
     res.json({ message: "Token refreshed" });
   } catch (err) {
     return res.status(403).json({ message: "Invalid or expired refresh token" });
-  }});
+  }
+});
 
 // LOGOUT
 router.post("/logout", authenticateUser, async (req, res) => {
@@ -295,7 +391,7 @@ router.get(
       // Redirect frontend without exposing tokens
       // res.redirect("http://localhost:5173/Userhome");
       // google/callback
-res.redirect("http://localhost:5173/Userhome?googleLogin=success");
+      res.redirect("http://localhost:5173/Userhome?googleLogin=success");
 
     } catch (err) {
       res.redirect("http://localhost:5173/login?error=auth_failed");
