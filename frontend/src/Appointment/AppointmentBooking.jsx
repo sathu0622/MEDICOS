@@ -30,32 +30,34 @@
 //   useEffect(() => {
 //     const fetchSlot = async () => {
 //       try {
-//         const allSlotsResponse = await api.get('/ScheduleOperations/getslot');
+//         // Use the available slots endpoint instead of admin-only endpoint
+//         const allSlotsResponse = await api.get('/ScheduleOperations/getslot/available');
 //         const foundSlot = allSlotsResponse.data.find(s => s._id === id);
 
 //         if (foundSlot) {
 //           setSlot(foundSlot);
-//           const slotDate = new Date(foundSlot.slotDate);
-//           const formattedDate = slotDate.toISOString().split('T')[0];
-//           const formattedTime = `${foundSlot.start} - ${foundSlot.end}`;
-          
-//           setAppointment(prev => ({ 
-//             ...prev, 
-//             date: formattedDate,
-//             atime: formattedTime
+//           setAppointment(prev => ({
+//             ...prev,
+//             date: foundSlot.slotDate ? new Date(foundSlot.slotDate).toISOString().split('T')[0] : '',
+//             atime: `${foundSlot.start} - ${foundSlot.end}` || '',
 //           }));
 //         } else {
-//           throw new Error('Slot not found');
+//           setError("Slot not found or no longer available");
 //         }
-//         setLoading(false);
 //       } catch (err) {
 //         console.error("Error fetching slot:", err);
-//         setError(err.message || "Failed to load slot details");
+//         setError("Failed to load slot details");
+//       } finally {
 //         setLoading(false);
 //       }
 //     };
 
-//     fetchSlot();
+//     if (id) {
+//       fetchSlot();
+//     } else {
+//       setError("No slot ID provided");
+//       setLoading(false);
+//     }
 //   }, [id]);
 
 
@@ -409,31 +411,34 @@ const AppointmentBooking = () => {
   useEffect(() => {
     const fetchSlot = async () => {
       try {
-        const allSlotsResponse = await api.get('/ScheduleOperations/getslot');
+        // Use the available slots endpoint instead of admin-only endpoint
+        const allSlotsResponse = await api.get('/ScheduleOperations/getslot/available');
         const foundSlot = allSlotsResponse.data.find(s => s._id === id);
 
         if (foundSlot) {
           setSlot(foundSlot);
-          const slotDate = new Date(foundSlot.slotDate);
-          const formattedDate = slotDate.toISOString().split('T')[0];
-          const formattedTime = `${foundSlot.start} - ${foundSlot.end}`;
-          setAppointment(prev => ({ 
-            ...prev, 
-            date: formattedDate,
-            atime: formattedTime
+          setAppointment(prev => ({
+            ...prev,
+            date: foundSlot.slotDate ? new Date(foundSlot.slotDate).toISOString().split('T')[0] : '',
+            atime: `${foundSlot.start} - ${foundSlot.end}` || '',
           }));
         } else {
-          throw new Error('Slot not found');
+          setError("Slot not found or no longer available");
         }
       } catch (err) {
         console.error("Error fetching slot:", err);
-        setError(err.message || "Failed to load slot details");
+        setError("Failed to load slot details");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSlot();
+    if (id) {
+      fetchSlot();
+    } else {
+      setError("No slot ID provided");
+      setLoading(false);
+    }
   }, [id]);
 
   const handleChange = (event) => {
@@ -496,9 +501,11 @@ const AppointmentBooking = () => {
         reason: appointment.reason.trim(),
         company: appointment.company.trim(),
         outcome: appointment.outcome.trim(),
-        date: appointment.date,
-        atime: appointment.atime,
+        date: slot.slotDate, // Use slot's date instead of appointment.date
+        atime: `${slot.start} - ${slot.end}`, // Format time correctly
       };
+
+      console.log('Booking data being sent:', bookingData); // Add logging for debugging
 
       const response = await api.post("/AppointmentOperations/Appointment", bookingData);
 
@@ -512,6 +519,7 @@ const AppointmentBooking = () => {
       }
     } catch (err) {
       console.error('Booking error:', err);
+      console.error('Error response:', err.response?.data); // Add more detailed error logging
       setError(err.response?.data?.message || err.message || "Error booking appointment");
     } finally {
       setSubmitLoading(false);

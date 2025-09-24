@@ -37,6 +37,7 @@ import {
   createSlot,
   getSlotsByUser,
   getAllSlots,
+  getAvailableSlots, // Add this import
   getSlotById,
   updateSlot,
   deleteSlot,
@@ -57,6 +58,7 @@ const scheduleValidation = [
 router.post("/Schedule", authenticateUser, authorizeRoles("doctor", "admin"), scheduleValidation, createSlot);
 router.get("/getslot/user/:email", authenticateUser, param("email").isEmail(), getSlotsByUser);
 router.get("/getslot", authenticateUser, authorizeRoles("admin"), getAllSlots);
+router.get("/getslot/available", authenticateUser, getAvailableSlots); // New route for all users
 router.get("/getslot/:id", authenticateUser, param("id").isMongoId(), getSlotById);
 router.put("/updateslot/:id", authenticateUser, authorizeRoles("doctor", "admin"), param("id").isMongoId(), scheduleValidation, updateSlot);
 router.delete("/deleteslot/:id", authenticateUser, authorizeRoles("admin"), param("id").isMongoId(), deleteSlot);

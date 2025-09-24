@@ -26,7 +26,14 @@ const AppointmentsPage = () => {
       try {
         if (!user) return;
 
-        const res = await api.get(`/AppointmentOperations/getappointment/user/${user._id}`);
+          // Fix: Check for both possible user ID fields and ensure it's not undefined
+          const userId = user._id || user.userId || user.id;
+
+          if (!userId) {
+              throw new Error('User ID not found');
+          }
+
+          const res = await api.get(`/AppointmentOperations/getappointment/user/${userId}`);
         setAppointments(res.data.appointments || []);
       } catch (err) {
         setError(err.response?.data?.message || err.message);
