@@ -97,6 +97,7 @@ const Registration = () => {
                                 placeholder="Enter your mobile number"
                                 value={formData.mobile}
                                 onChange={handleChange}
+                                maxLength={10}
                                 required
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007BFF] focus:border-[#007BFF] bg-white text-black"
                             />

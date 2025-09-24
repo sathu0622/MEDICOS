@@ -21,7 +21,7 @@ const Available = () => {
   useEffect(() => {
     const fetchSlots = async () => {
       try {
-        const response = await api.get('/ScheduleOperations/getslot');
+        const response = await api.get('/ScheduleOperations/getslot/available'); // Use new endpoint
         const availableSlots = response.data.filter(slot => !slot.isBooked);
         setSlots(availableSlots);
         setFilteredSlots(availableSlots);

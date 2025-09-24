@@ -177,3 +177,22 @@ export const deleteSlot = async (req, res) => {
     res.status(500).json({ message: "Error deleting slot", error: err });
   }
 };
+
+// Get available slots for all users (non-admin)
+export const getAvailableSlots = async (req, res) => {
+  try {
+    const schedule = await ScheduleModel.find({}).lean();
+    const bookedSlots = await BookModel.find({}, "slotId").lean();
+    const bookedSlotIds = bookedSlots.map((booking) => booking.slotId.toString());
+
+    const slotsWithBookingStatus = schedule.map((slot) => ({
+      ...slot,
+      isBooked: bookedSlotIds.includes(slot._id.toString()),
+    }));
+
+    res.json(slotsWithBookingStatus);
+  } catch (err) {
+    console.error("Error fetching available slots:", err);
+    res.status(500).json({ message: "Error fetching available slots", error: err });
+  }
+};

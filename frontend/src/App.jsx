@@ -203,11 +203,7 @@ function App() {
               <AppointmentBooking />
             </ProtectedRoute>
           } />
-          <Route path="/AppointmentsPage" element={
-            <RoleBasedRoute allowedRoles={["admin"]}>
-              <AppointmentsPage />
-            </RoleBasedRoute>
-          } />
+          <Route path="/AppointmentsPage" element={<AppointmentsPage />} />
           <Route path="/UpdateAppointmentPage/:id" element={
             <RoleBasedRoute allowedRoles={["admin"]}>
               <UpdateAppointmentPage />
